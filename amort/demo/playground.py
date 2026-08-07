@@ -97,6 +97,8 @@ def _run_lane_cold(lane: str, prompt: str, base_url: str, out: dict[str, Any]) -
         "tool_calls": out.get("tool_calls"),
         "ok": "error" not in out, "simulated": False, "error": out.get("error"),
     })
+    if isinstance(out.get("report"), dict):
+        stage.push({"type": "output", "lane": lane, "report": out["report"]})
 
 
 def _run_lane_amortize(prompt: str, out: dict[str, Any]) -> None:
@@ -140,6 +142,8 @@ def _run_lane_amortize(prompt: str, out: dict[str, Any]) -> None:
                 "wall_ms": out["wall_ms"], "llm_calls": out["llm_calls"],
                 "tool_calls": out["tool_calls"], "ok": True, "simulated": False,
             })
+            if isinstance(out.get("report"), dict):
+                stage.push({"type": "output", "lane": "amortize", "report": out["report"]})
             return
         stage.push({
             "type": "memory", "op": "add", "node": f"fallback_{int(time.time())}",
@@ -198,10 +202,6 @@ def run_prompt(prompt: str) -> None:
     tb.join()
     ta.join()
     warm = bool(b.get("warm"))
-
-    for lane, side in (("baseline", a), ("amortize", b)):
-        if isinstance(side.get("report"), dict):
-            stage.push({"type": "output", "lane": lane, "report": side["report"]})
 
     parity = grade(a.get("report"), b.get("report"))
     stage.push({"type": "parity", "key": "left_vs_right", "verdict": parity.verdict,
