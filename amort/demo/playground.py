@@ -56,10 +56,15 @@ def _stream_recorder(lane: str, rec: Any, done: threading.Event) -> None:
 
 
 def _run_lane_cold(lane: str, prompt: str, base_url: str, out: dict[str, Any]) -> None:
+    """One cold lane, pushing its own run_start/run_end at the moments they
+    actually happen — the browser clock must agree with the measured wall_ms,
+    or the time on screen reads as faked (because it would be)."""
     from amort.demo.tasks import ticket_triage as task
     from amort.skills.recorder import RunRecorder
 
     s = get_settings()
+    stage.push({"type": "run_start", "lane": lane, "mode": "cold",
+                "task": "ticket_triage", "model": s.novita_model, "simulated": False})
     rec = RunRecorder(
         lane=lane, mode="cold", system=task.SYSTEM, user_msg=prompt,
         tool_names=task.TOOL_NAMES, model=s.novita_model,
@@ -74,15 +79,30 @@ def _run_lane_cold(lane: str, prompt: str, base_url: str, out: dict[str, Any]) -
             user_msg=prompt, recorder=rec,
         )
         out["report"], out["rec"] = report, rec
+        # snapshot NOW — wall_ms is a live now-minus-start property, and reading
+        # it after waiting on the other lane would inflate this lane's time
+        out.update(tokens=rec.input_tokens + rec.output_tokens, cost=rec.cost_usd,
+                   wall_ms=rec.wall_ms, llm_calls=rec.llm_calls, tool_calls=rec.tool_calls,
+                   mode="cold")
     except Exception as exc:  # noqa: BLE001 — a dead upstream must not kill the server
         out["error"] = f"{type(exc).__name__}: {exc}"
+        out["mode"] = "cold"
     finally:
         done.set()
         tail.join(timeout=2)
+    stage.push({
+        "type": "run_end", "lane": lane, "mode": "cold",
+        "tokens": out.get("tokens"), "cost_usd": out.get("cost"),
+        "wall_ms": out.get("wall_ms"), "llm_calls": out.get("llm_calls"),
+        "tool_calls": out.get("tool_calls"),
+        "ok": "error" not in out, "simulated": False, "error": out.get("error"),
+    })
 
 
-def _try_warm(prompt: str, out: dict[str, Any]) -> bool:
-    """Layer 2: replay a verified skill if memory recognises this task."""
+def _run_lane_amortize(prompt: str, out: dict[str, Any]) -> None:
+    """The right lane: warm skill replay when memory recognises the task,
+    else a cold run through the proxy. Pushes its own start/end so the
+    on-screen clock is the run's actual duration."""
     from amort.demo.tasks import ticket_triage as task
     from amort.skills.replayer import replay
     from amort.skills.store_everos import fingerprint, fingerprint_query, search_skill
@@ -92,32 +112,40 @@ def _try_warm(prompt: str, out: dict[str, Any]) -> bool:
                 "label": "searching EverOS memory for this task…", "backend": "everos"})
     fp = fingerprint(task.SYSTEM, prompt, task.TOOL_NAMES)
     match = search_skill(fp, fingerprint_query(task.SYSTEM, prompt, task.TOOL_NAMES))
-    if not match or not match.is_confident or match.skill.status != "verified":
-        return False
-    stage.push({
-        "type": "memory", "op": "hit", "node": str(match.skill_id),
-        "label": "skill recalled — replaying as code", "backend": "everos",
-    })
-    outcome = replay(match.skill, {
-        "user_msg": prompt, "tool_executor": task.execute_tool,
-        "model": s.novita_model,
-        "base_url": f"{s.novita_api_url.rstrip('/')}/v1", "api_key": s.novita_api_key,
-    })
-    if not outcome.took_warm_path:
+
+    if match and match.is_confident and match.skill.status == "verified":
+        stage.push({"type": "run_start", "lane": "amortize", "mode": "warm",
+                    "task": "ticket_triage", "model": s.novita_model, "simulated": False})
+        stage.push({
+            "type": "memory", "op": "hit", "node": str(match.skill_id),
+            "label": "skill recalled — replaying as code", "backend": "everos",
+        })
+        outcome = replay(match.skill, {
+            "user_msg": prompt, "tool_executor": task.execute_tool,
+            "model": s.novita_model,
+            "base_url": f"{s.novita_api_url.rstrip('/')}/v1", "api_key": s.novita_api_key,
+        })
+        if outcome.took_warm_path:
+            tokens = cost = 0.0
+            for step in outcome.steps:
+                _push_step("amortize", {**step, "mode": "warm"})
+                tokens += step.get("input_tokens", 0) + step.get("output_tokens", 0)
+                cost += step.get("cost_usd", 0.0)
+            out.update(report=outcome.output, warm=True, tokens=int(tokens), cost=cost,
+                       wall_ms=outcome.wall_ms, llm_calls=outcome.llm_calls,
+                       tool_calls=outcome.tool_calls, skill_id=match.skill_id, mode="warm")
+            stage.push({
+                "type": "run_end", "lane": "amortize", "mode": "warm",
+                "tokens": out["tokens"], "cost_usd": out["cost"],
+                "wall_ms": out["wall_ms"], "llm_calls": out["llm_calls"],
+                "tool_calls": out["tool_calls"], "ok": True, "simulated": False,
+            })
+            return
         stage.push({
             "type": "memory", "op": "add", "node": f"fallback_{int(time.time())}",
             "label": f"guard fallback: {outcome.fallback}", "backend": "everos",
         })
-        return False
-    tokens = cost = 0.0
-    for step in outcome.steps:
-        _push_step("amortize", {**step, "mode": "warm"})
-        tokens += step.get("input_tokens", 0) + step.get("output_tokens", 0)
-        cost += step.get("cost_usd", 0.0)
-    out.update(report=outcome.output, warm=True, tokens=int(tokens), cost=cost,
-               wall_ms=outcome.wall_ms, llm_calls=outcome.llm_calls,
-               tool_calls=outcome.tool_calls, skill_id=match.skill_id)
-    return True
+    _run_lane_cold("amortize", prompt, f"{s.proxy_base_url}/v1", out)
 
 
 def _maybe_compile(case_a: dict[str, Any], case_b: dict[str, Any]) -> None:
@@ -156,48 +184,20 @@ def run_prompt(prompt: str) -> None:
 
     s = get_settings()
     novita = f"{s.novita_api_url.rstrip('/')}/v1"
-    proxy = f"{s.proxy_base_url}/v1"
 
     stage.push({"type": "prompt", "text": prompt[:300]})
     a: dict[str, Any] = {}
     b: dict[str, Any] = {}
 
-    stage.push({"type": "run_start", "lane": "baseline", "mode": "cold",
-                "task": "ticket_triage", "model": s.novita_model, "simulated": False})
+    # Both lanes run concurrently; each pushes its own run_start/run_end at the
+    # moments they actually happen, so the on-screen clocks are truthful.
     ta = threading.Thread(target=_run_lane_cold, args=("baseline", prompt, novita, a))
+    tb = threading.Thread(target=_run_lane_amortize, args=(prompt, b))
     ta.start()
-
-    warm = _try_warm(prompt, b)
-    if warm:
-        stage.push({"type": "run_start", "lane": "amortize", "mode": "warm",
-                    "task": "ticket_triage", "model": s.novita_model, "simulated": False})
-    else:
-        stage.push({"type": "run_start", "lane": "amortize", "mode": "cold",
-                    "task": "ticket_triage", "model": s.novita_model, "simulated": False})
-        tb = threading.Thread(target=_run_lane_cold, args=("amortize", prompt, proxy, b))
-        tb.start()
-        tb.join()
+    tb.start()
+    tb.join()
     ta.join()
-
-    # totals per lane — copied from the recorders, never computed here
-    if "rec" in a:
-        rec = a["rec"]
-        a.update(tokens=rec.input_tokens + rec.output_tokens, cost=rec.cost_usd,
-                 wall_ms=rec.wall_ms, llm_calls=rec.llm_calls, tool_calls=rec.tool_calls)
-    if "rec" in b:
-        rec = b["rec"]
-        b.update(tokens=rec.input_tokens + rec.output_tokens, cost=rec.cost_usd,
-                 wall_ms=rec.wall_ms, llm_calls=rec.llm_calls, tool_calls=rec.tool_calls)
-
-    for lane, side, mode in (("baseline", a, "cold"), ("amortize", b, "warm" if warm else "cold")):
-        stage.push({
-            "type": "run_end", "lane": lane, "mode": mode,
-            "tokens": side.get("tokens"), "cost_usd": side.get("cost"),
-            "wall_ms": side.get("wall_ms"), "llm_calls": side.get("llm_calls"),
-            "tool_calls": side.get("tool_calls"),
-            "ok": "error" not in side, "simulated": False,
-            "error": side.get("error"),
-        })
+    warm = bool(b.get("warm"))
 
     for lane, side in (("baseline", a), ("amortize", b)):
         if isinstance(side.get("report"), dict):
