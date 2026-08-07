@@ -170,18 +170,34 @@ cold and re-prompted. Prints the 2×2 and writes `demo_report.json`.
 └─────────────────┴─────────────────────────────┴─────────────────────────────┴──────────────┘
 ```
 
-**The `0%` is the point.** Both optimizer layers are stubs, so routing through Amortize changes
-nothing — and the harness computes the Δ from measurements rather than asserting it, so it says so.
-When the layers land, the same command produces the real table with no changes to the harness.
+**The Δ column is computed, never asserted** — the harness measures both lanes and prints whatever
+the ledger recorded, `0%` included. When an optimizer layer lands, the same command produces the
+real table with no changes to the harness.
 
-Without an `ANTHROPIC_API_KEY` the demo runs offline: a scripted agent calls the same 8 tools and
-token counts are **estimated** from the real payload size. Every such number is tagged
-`simulated: true` through the recorder, the table, and `demo_report.json`.
+Live runs drive **Novita** (OpenAI-compatible; set `NOVITA_API_KEY` and optionally `NOVITA_MODEL`
+in `.env`). Without a key the demo runs offline: a scripted agent calls the same 8 tools and token
+counts are **estimated** from the real payload size. Every such number is tagged `simulated: true`
+through the recorder, the table, and `demo_report.json`.
+
+### The stage view
 
 ```bash
-uv run amort stats     # what the ledger knows
-uv run amort skills    # compiled skills and their status
-uv run amort dash      # the dashboard
+uv run amort demo --task ticket_triage --stage        # projector page on :4700
+uv run amort demo --replay demo_report.json           # replay a recorded run (offline fallback)
+```
+
+`--stage` serves a dark, projector-sized page (default port 4700, `--stage-port` to change): two
+lanes — DIRECT vs THROUGH AMORTIZE — with live token/dollar meters, per-run stopwatches, a parity
+stamp, and a final full-screen delta computed from the measured runs. Events stream over SSE from
+the demo process. `--replay` synthesizes the same event sequence from a recorded
+`demo_report.json`, so the stage works with no network at all; replayed runs are labelled as such
+and simulated numbers keep their label on screen.
+
+```bash
+uv run amort stats            # ledger rollup: runs, per-task totals, SAVINGS view
+uv run amort skills list      # compiled skills and their status
+uv run amort skills show <id> # one skill: status, parity, version, tools, markdown
+uv run amort dash             # the dashboard
 ```
 
 ---
@@ -256,13 +272,13 @@ run's trajectory through `/api/v2/memory/add` + `/flush` and uses hybrid retriev
 
 | Command | What it does |
 |---|---|
-| `amort up` | Start the proxy (`--port`, `--host`, `--reload`) |
-| `amort demo` | The 2×2 comparison harness (`--task`, `--lanes`, `--live/--offline`) |
-| `amort stats` | Ledger rollup + the `SAVINGS` view |
-| `amort skills` | Compiled skills and their promotion status |
+| `amort up` | Start the proxy (`--port`, `--host`, `--reload`); ends with the paste-ready connect snippet |
+| `amort demo` | The 2×2 comparison harness (`--task`, `--lanes`, `--live/--offline`, `--stage`, `--replay`) |
+| `amort stats` | Ledger rollup, per-task totals + the `SAVINGS` view |
+| `amort skills list` / `show <id>` | Compiled skills from the markdown store |
 | `amort dash` | Streamlit dashboard |
 | `amort snowflake-init` | Apply the ledger DDL (`--dry-run`) |
-| `amort doctor` | Config, ledger, memory, upstream, and proxy health |
+| `amort doctor` | Config, ledger, memory, Novita + upstream reachability, proxy health |
 
 ---
 
@@ -287,7 +303,7 @@ amort/
 │   ├── pricing.py          $/Mtok, cache-aware
 │   ├── snowflake_writer.py batched, retried, degradable
 │   └── sqlite_writer.py    same schema, no credentials
-├── demo/                   demo-only: task, harness, report
+├── demo/                   demo-only: task, harness, report, stage view
 └── dashboard/app.py        Streamlit
 ```
 

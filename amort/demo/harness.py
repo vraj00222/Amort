@@ -35,7 +35,8 @@ from typing import Any, Literal
 from rich.console import Console
 
 from amort.config import get_settings
-from amort.ledger.events import RunRecord, emit_run, flush
+from amort.demo import stage
+from amort.ledger.events import RunRecord, StepEvent, emit, emit_run, flush
 from amort.skills.grader import ParityResult, grade, grade_accuracy
 from amort.skills.recorder import RunRecorder
 
@@ -112,11 +113,23 @@ def _run_once(
     live: bool,
     proxy_url: str | None,
     api_key: str | None,
-) -> RunResult:
-    """Execute one cell. Lane B routes through the proxy by setting `base_url`."""
+) -> tuple[RunResult, dict[str, Any]]:
+    """Execute one cell. Lane B routes through the proxy by setting `base_url`.
+
+    Returns the RunResult plus the recorder's Case dict — the compile hook
+    needs the raw cases, not just the rollups.
+    """
     settings = get_settings()
     skill_id: str | None = None
     replay_fallback: str | None = None
+    took_warm_path = False
+    output: Any = None
+
+    recorder = RunRecorder(
+        lane=lane, mode=mode, system=module.SYSTEM, user_msg=module.TASK_PROMPT,
+        tool_names=module.TOOL_NAMES, model=model, simulated=not live,
+    )
+    started = time.perf_counter()
 
     # --- the warm path, when the lane and mode call for it ------------------
     if lane == "amortize" and mode == "warm":
@@ -127,22 +140,24 @@ def _run_once(
         match = search_skill(fp, fingerprint_query(module.SYSTEM, module.TASK_PROMPT, module.TOOL_NAMES))
         if match and match.is_confident:
             skill_id = match.skill_id
-            outcome = replay(match.skill, {"user_msg": module.TASK_PROMPT})
+            outcome = replay(match.skill, {
+                "user_msg": module.TASK_PROMPT,
+                "tool_executor": module.execute_tool,
+                "model": model,
+                "base_url": f"{settings.novita_api_url.rstrip('/')}/v1",
+                "api_key": settings.novita_api_key,
+            })
             if outcome.took_warm_path:
-                # TODO(layer2): build a RunResult from `outcome` here. Unreachable
-                # today — `replay()` always falls back — so the warm cell falls
-                # through to a normal cold run below, which is the honest result.
-                pass
+                _replay_into_recorder(recorder, outcome, skill_id=skill_id, module=module)
+                output = outcome.output
+                took_warm_path = True
             replay_fallback = outcome.fallback
         else:
             replay_fallback = "no confident skill match (Layer 2 compiles none yet)"
 
-    recorder = RunRecorder(
-        lane=lane, mode=mode, system=module.SYSTEM, user_msg=module.TASK_PROMPT,
-        tool_names=module.TOOL_NAMES, model=model, simulated=not live,
-    )
-    started = time.perf_counter()
-    if live:
+    if took_warm_path:
+        pass  # the recorder already holds the replayed trajectory
+    elif live:
         # The OpenAI SDK appends `/chat/completions` to base_url, so both lanes
         # need the `/v1` suffix — lane B's lands on the proxy's
         # `/v1/chat/completions` route, which relays to Novita.
@@ -181,7 +196,95 @@ def _run_once(
         output=output, output_hash=recorder.output_hash, simulated=not live,
         ok=recorder.ok, error=recorder.error,
         skill_id=skill_id, replay_fallback=replay_fallback,
-    )
+    ), case
+
+
+def _replay_into_recorder(
+    rec: RunRecorder, outcome: Any, *, skill_id: str, module: Any
+) -> None:
+    """Mirror `outcome.steps` (`RecordedStep.to_dict()`-shaped) into the
+    recorder, emitting one StepEvent per step exactly as the live loop does."""
+    task_name = getattr(module, "TASK_NAME", "")
+    common = {
+        "run_id": rec.run_id, "lane": rec.lane, "mode": rec.mode,
+        "task_fingerprint": rec.task_fingerprint,
+    }
+    for s in outcome.steps:
+        kind = s.get("kind")
+        name = str(s.get("name") or "")
+        meta = dict(s.get("meta") or {})
+        wall_ms = int(s.get("wall_ms") or 0)
+        if kind == "llm":
+            step = rec.llm_step(
+                s.get("model") or name or "llm",
+                input_tokens=int(s.get("input_tokens") or 0),
+                output_tokens=int(s.get("output_tokens") or 0),
+                cost_usd=float(s.get("cost_usd") or 0.0),
+                wall_ms=wall_ms, meta=meta,
+            )
+            emit(StepEvent(
+                **common, step_idx=step.step_idx, kind="llm",
+                name=name or step.name, model=s.get("model"),
+                input_tokens=step.input_tokens, output_tokens=step.output_tokens,
+                cost_usd=step.cost_usd, wall_ms=wall_ms,
+                meta={**meta, "task": task_name},
+            ))
+        elif kind == "tool":
+            step = rec.tool_step(name, args=s.get("args"), wall_ms=wall_ms, meta=meta)
+            emit(StepEvent(
+                **common, step_idx=step.step_idx, kind="tool", name=name,
+                wall_ms=wall_ms, meta={**meta, "task": task_name},
+            ))
+        elif kind == "replay":
+            step = rec.replay_step(skill_id, wall_ms=wall_ms, **meta)
+            emit(StepEvent(
+                **common, step_idx=step.step_idx, kind="replay",
+                name=f"skill:{skill_id}", wall_ms=wall_ms,
+                meta={**meta, "task": task_name},
+            ))
+    rec.finish(outcome.output)
+
+
+def _compile_hook(case_a: dict[str, Any], case_b: dict[str, Any],
+                  *, run: RunResult, result: DemoResult) -> None:
+    """Hand the two cold Cases to Layer 2's compiler after B_cold completes.
+
+    Per CONTRACTS.md the compile call is logged under B_cold's run_id as
+    `kind="llm", name="compile", meta.phase="compile"`. The compiler emits its
+    own LLM-cost StepEvents; `compile_skill`'s return value exposes no usage,
+    so this marker is logged at $0.00 rather than inventing a number.
+    """
+    from amort.skills.compiler import compile_skill
+
+    started = time.perf_counter()
+    skill = None
+    error: str | None = None
+    try:
+        skill = compile_skill([case_a, case_b])
+    except Exception as exc:  # noqa: BLE001 — compiling must never fail the demo
+        error = f"{type(exc).__name__}: {exc}"
+    wall_ms = int((time.perf_counter() - started) * 1000)
+
+    skill_id = skill.skill_id if skill is not None else None
+    emit(StepEvent(
+        run_id=run.run_id, lane=run.lane, mode=run.mode,
+        task_fingerprint=case_b.get("task_fingerprint", ""),
+        step_idx=len(case_b.get("steps") or []), kind="llm", name="compile",
+        wall_ms=wall_ms,
+        meta={"phase": "compile", "skill_id": skill_id, "task": result.task,
+              "cost_note": "marker at $0.00 — the compiler logs its own LLM usage"},
+    ))
+    if error:
+        result.notes.append(f"compile_skill([A_cold, B_cold]) raised: {error}")
+    elif skill is None:
+        result.notes.append(
+            "compile_skill([A_cold, B_cold]) returned no skill — the Layer 2 compiler "
+            "is not merged yet (or the cases did not qualify), so nothing was distilled."
+        )
+    else:
+        result.notes.append(
+            f"compiled skill {skill_id} (status={skill.status}) from the two cold runs"
+        )
 
 
 def run_demo(
@@ -259,19 +362,40 @@ def run_demo(
         f"\n[bold cyan]amort demo[/bold cyan] · task={task} · model={model} · "
         f"{'LIVE' if live else 'OFFLINE (simulated)'} · ledger={result.ledger_backend}\n"
     )
+    cases: dict[str, dict[str, Any]] = {}
     for cell, lane, mode in plan:
         label = f"{cell:<7} {lane}/{mode}"
+        stage.push({
+            "type": "run_start", "cell": cell, "lane": lane, "mode": mode,
+            "task": task, "model": model, "simulated": not live,
+        })
         with console.status(f"[dim]{label}…[/dim]"):
-            run = _run_once(
+            run, case = _run_once(
                 module, lane=lane, mode=mode, model=model, live=live,
                 proxy_url=proxy_url, api_key=api_key,
             )
         result.runs[cell] = run
+        cases[cell] = case
+        for s in case.get("steps") or []:
+            stage.push({
+                "type": "step", "cell": cell, "lane": lane, "mode": mode,
+                "kind": s["kind"], "name": s["name"],
+                "tokens": s["input_tokens"] + s["output_tokens"],
+                "cost_usd": s["cost_usd"], "wall_ms": s["wall_ms"],
+            })
+        stage.push({
+            "type": "run_end", "cell": cell, "lane": lane, "mode": mode,
+            "tokens": run.total_tokens, "cost_usd": run.cost_usd,
+            "wall_ms": run.wall_ms, "llm_calls": run.llm_calls,
+            "tool_calls": run.tool_calls, "ok": run.ok, "simulated": run.simulated,
+        })
         console.print(
             f"  {label}  {run.total_tokens:>8,} tok  ${run.cost_usd:>7.4f}  "
             f"{run.wall_ms / 1000:>5.1f}s  {run.llm_calls} llm / {run.tool_calls} tool"
             + (f"  [yellow]{run.error}[/yellow]" if not run.ok else "")
         )
+        if cell == "B_cold" and "A_cold" in cases:
+            _compile_hook(cases["A_cold"], case, run=run, result=result)
     flush()
 
     # --- grading ------------------------------------------------------------
@@ -293,12 +417,25 @@ def run_demo(
     if b_warm and b_warm.replay_fallback:
         result.notes.append(f"Warm lane fell back to the full agent: {b_warm.replay_fallback}")
 
-    from amort.demo.report import render, write_json
+    for key, parity in result.parity.items():
+        stage.push({
+            "type": "parity", "key": key,
+            "verdict": parity.verdict, "symbol": parity.symbol,
+        })
+
+    from amort.demo.report import render, to_dict, write_json
 
     render(result)
     if write_report:
         path = write_json(result)
         console.print(f"[dim]wrote {path}[/dim]")
+
+    warm_parity = result.parity.get("B_cold_vs_B_warm")
+    stage.push({
+        "type": "final", "deltas": to_dict(result)["deltas"],
+        "parity": warm_parity.verdict if warm_parity else "n/a",
+        "simulated": result.simulated,
+    })
     return result
 
 
