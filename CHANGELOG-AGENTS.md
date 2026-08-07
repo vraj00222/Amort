@@ -121,3 +121,73 @@ Simulated numbers, labelled as such — the offline lane estimates tokens at cha
    demo with no dieting. Fine as engineering, but the pitch should not imply otherwise.
 4. **`grader.py`'s `REPORT_KEY`/`REPORT_FIELDS` are ticket-triage-specific**, which is what forced
    the `lines` naming above. A per-task key would let future tasks use `report` safely.
+
+---
+
+## branch `abhishek` — UI pass 2: premium colour grade, all surfaces
+
+Synced onto `main` at `eb56058` ("day-one: demo-ready") — both optimizer layers
+are live there now, so the earlier "Layer 2 is a stub" wording in this file's
+first section describes a state that has passed.
+
+### Files touched
+
+| File | Change |
+|---|---|
+| `amort/demo/stage.html` | regraded + restructured bars, drawn parity marks, a11y |
+| `amort/dashboard/app.py` | same palette, **amortization-curve fix**, MEMORY tile fix |
+| `README.md` | conflict resolved in favour of `origin/main`'s "Honest edges" |
+
+Still untouched: `amort/proxy/**`, `amort/skills/**`, `config.py`,
+`amort/ledger/**`, `scripts/accept_*`, `gate.sh`, `amort/demo/report.py`.
+
+### The colour system (both screens share it)
+
+Authored in **OKLCH**; each token carries its resolved hex in a comment.
+
+* Canvas is **blue-ink**, not black — black reads terminal, ink reads
+  engineered — and every neutral is tinted to the same 255° hue so a page is one
+  material rather than grey boxes on a dark rectangle.
+* The data colours are a **warm/cool opposition**: bronze `oklch(.700 .062 64)`
+  is the money burning on the direct path, jade `oklch(.815 .135 172)` the
+  engineered one. In the dashboard, **hue = lane, lightness = mode**.
+* They separate in **greyscale** too (L .700 vs .815, 1.61:1), and every bar
+  carries its own label and number — colour is never the only code.
+* The accent is spent on exactly two things: the savings bar and the final
+  number. Rarity is what gives it force.
+
+Contrast, computed against `--panel`: fg 16.7 · dim 8.7 · label 5.3 · jade 10.7
+· bronze 6.6 · amber 10.2 · rose 6.8 · azure 8.4. **Do not lower `--label`** —
+its predecessor sat at 2.36:1 while carrying every metric name on the page.
+
+### Two defects fixed that tests did not catch
+
+1. **The amortization curve was indexed on a global run counter**, so each of
+   the four series held a value on ~25% of x positions and `NaN` on the rest.
+   The dashboard's flagship chart rendered as four disconnected stubs. Now
+   indexed on each series' own run number via `cumcount`. `smoke_dash` passed
+   throughout — it asserts frames are non-empty, not that a line is drawable.
+   **If you add a chart, assert continuity, not non-emptiness.**
+2. **Value text sat on the bar fill** at 1.18–2.80:1. The fill's colour is data
+   and cannot be darkened to suit a label, so the number moved beside the
+   track (17:1) rather than the fill changing.
+
+Also: `transform: scaleX()` replaces animated `width` (composited, no layout
+thrash); elevation is declared once as a border, replacing a zero-offset colour
+halo over a 1px border; `aria-live` on every SSE-updated region; parity marks
+are drawn SVG rather than a Unicode glyph.
+
+### Open items
+
+1. **`accept_layer1` "dieting >=60%" fails on `main` itself.** `before_request`
+   now returns the four plan-replay `tools_required` instead of the synthetic
+   stub tool, so the test's expectation no longer matches Layer 2's PLAN REPLAY
+   behaviour. Verified identical with every one of this branch's changes
+   stashed — it is not from this work. Owner: workstream A/B.
+2. **`/health` still reports `"lighten": "stub (TODO layer1)"`**
+   (`amort/proxy/server.py`), which is now false. Inside the proxy boundary, so
+   left alone.
+3. `amort/demo/report.py`'s panel still says both layers are stubs and prints
+   "which is why it prints 0%" above a non-zero delta.
+4. `stage.py` sends no cache headers, so a browser can serve a stale page across
+   edits. Append `?v=N` when checking, or add `Cache-Control: no-store`.
