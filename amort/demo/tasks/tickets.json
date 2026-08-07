@@ -1,0 +1,798 @@
+{
+  "_meta": {
+    "generated": "deterministic fixture, seed 20260807",
+    "note": "Committed on purpose: the demo must produce the same numbers on any machine."
+  },
+  "tickets": [
+    {
+      "ticket_id": "TKT-4100",
+      "customer_id": "CUS-200",
+      "subject": "Duplicate charge on invoice",
+      "body": "Duplicate charge on invoice. This started after the last release and is blocking our team. Happens intermittently, roughly one in five attempts.",
+      "product_area": "billing",
+      "reported_severity": "low",
+      "status": "pending",
+      "created_at": "2026-08-01T09:00:00Z",
+      "first_response_at": null,
+      "channel": "email",
+      "tags": [
+        "billing",
+        "regression"
+      ]
+    },
+    {
+      "ticket_id": "TKT-4101",
+      "customer_id": "CUS-207",
+      "subject": "SSO login loop",
+      "body": "SSO login loop. Happens intermittently, roughly one in five attempts. Our workaround is manual and does not scale.",
+      "product_area": "auth",
+      "reported_severity": "urgent",
+      "status": "open",
+      "created_at": "2026-08-02T10:13:00Z",
+      "first_response_at": "2026-08-02T11:15:00Z",
+      "channel": "chat",
+      "tags": [
+        "auth",
+        "how-to"
+      ]
+    },
+    {
+      "ticket_id": "TKT-4102",
+      "customer_id": "CUS-214",
+      "subject": "429 rate limit with no retry-after",
+      "body": "429 rate limit with no retry-after. This started after the last release and is blocking our team. Happens intermittently, roughly one in five attempts.",
+      "product_area": "api",
+      "reported_severity": "high",
+      "status": "open",
+      "created_at": "2026-08-03T11:26:00Z",
+      "first_response_at": "2026-08-03T12:15:00Z",
+      "channel": "portal",
+      "tags": [
+        "api",
+        "outage"
+      ]
+    },
+    {
+      "ticket_id": "TKT-4103",
+      "customer_id": "CUS-221",
+      "subject": "Charts render blank on Safari",
+      "body": "Charts render blank on Safari. Our workaround is manual and does not scale. Our workaround is manual and does not scale.",
+      "product_area": "dashboard",
+      "reported_severity": "normal",
+      "status": "open",
+      "created_at": "2026-08-04T12:39:00Z",
+      "first_response_at": "2026-08-04T13:15:00Z",
+      "channel": "email",
+      "tags": [
+        "billing-dispute",
+        "dashboard"
+      ]
+    },
+    {
+      "ticket_id": "TKT-4104",
+      "customer_id": "CUS-228",
+      "subject": "App crashes on cold start",
+      "body": "App crashes on cold start. Happens intermittently, roughly one in five attempts. Our workaround is manual and does not scale.",
+      "product_area": "mobile",
+      "reported_severity": "low",
+      "status": "open",
+      "created_at": "2026-08-05T13:52:00Z",
+      "first_response_at": null,
+      "channel": "chat",
+      "tags": [
+        "mobile",
+        "regression"
+      ]
+    },
+    {
+      "ticket_id": "TKT-4105",
+      "customer_id": "CUS-235",
+      "subject": "Slack notifications duplicated",
+      "body": "Slack notifications duplicated. Happens intermittently, roughly one in five attempts. This started after the last release and is blocking our team.",
+      "product_area": "integrations",
+      "reported_severity": "urgent",
+      "status": "open",
+      "created_at": "2026-08-06T14:05:00Z",
+      "first_response_at": "2026-08-06T15:15:00Z",
+      "channel": "portal",
+      "tags": [
+        "how-to",
+        "integrations"
+      ]
+    },
+    {
+      "ticket_id": "TKT-4106",
+      "customer_id": "CUS-201",
+      "subject": "Refund not received",
+      "body": "Refund not received. This started after the last release and is blocking our team. This is affecting customer-facing workflows today.",
+      "product_area": "billing",
+      "reported_severity": "high",
+      "status": "open",
+      "created_at": "2026-08-07T15:18:00Z",
+      "first_response_at": "2026-08-07T16:15:00Z",
+      "channel": "email",
+      "tags": [
+        "billing",
+        "outage"
+      ]
+    },
+    {
+      "ticket_id": "TKT-4107",
+      "customer_id": "CUS-208",
+      "subject": "MFA codes rejected",
+      "body": "MFA codes rejected. This started after the last release and is blocking our team. This is affecting customer-facing workflows today.",
+      "product_area": "auth",
+      "reported_severity": "normal",
+      "status": "open",
+      "created_at": "2026-08-01T16:31:00Z",
+      "first_response_at": "2026-08-01T17:15:00Z",
+      "channel": "chat",
+      "tags": [
+        "auth",
+        "billing-dispute"
+      ]
+    },
+    {
+      "ticket_id": "TKT-4108",
+      "customer_id": "CUS-215",
+      "subject": "Webhook deliveries stopped",
+      "body": "Webhook deliveries stopped. We have reproduced it on three separate accounts. This is affecting customer-facing workflows today.",
+      "product_area": "api",
+      "reported_severity": "low",
+      "status": "open",
+      "created_at": "2026-08-02T09:44:00Z",
+      "first_response_at": null,
+      "channel": "portal",
+      "tags": [
+        "api",
+        "regression"
+      ]
+    },
+    {
+      "ticket_id": "TKT-4109",
+      "customer_id": "CUS-222",
+      "subject": "Export to CSV truncates rows",
+      "body": "Export to CSV truncates rows. This is affecting customer-facing workflows today. We have reproduced it on three separate accounts.",
+      "product_area": "dashboard",
+      "reported_severity": "urgent",
+      "status": "pending",
+      "created_at": "2026-08-03T10:57:00Z",
+      "first_response_at": "2026-08-03T11:15:00Z",
+      "channel": "email",
+      "tags": [
+        "dashboard",
+        "how-to"
+      ]
+    },
+    {
+      "ticket_id": "TKT-4110",
+      "customer_id": "CUS-229",
+      "subject": "Push notifications silently dropped",
+      "body": "Push notifications silently dropped. This started after the last release and is blocking our team. This is affecting customer-facing workflows today.",
+      "product_area": "mobile",
+      "reported_severity": "high",
+      "status": "open",
+      "created_at": "2026-08-04T11:10:00Z",
+      "first_response_at": "2026-08-04T12:15:00Z",
+      "channel": "chat",
+      "tags": [
+        "mobile",
+        "outage"
+      ]
+    },
+    {
+      "ticket_id": "TKT-4111",
+      "customer_id": "CUS-236",
+      "subject": "Jira sync stuck pending",
+      "body": "Jira sync stuck pending. Our workaround is manual and does not scale. This is affecting customer-facing workflows today.",
+      "product_area": "integrations",
+      "reported_severity": "normal",
+      "status": "open",
+      "created_at": "2026-08-05T12:23:00Z",
+      "first_response_at": "2026-08-05T13:15:00Z",
+      "channel": "portal",
+      "tags": [
+        "billing-dispute",
+        "integrations"
+      ]
+    },
+    {
+      "ticket_id": "TKT-4112",
+      "customer_id": "CUS-202",
+      "subject": "Card declined at renewal",
+      "body": "Card declined at renewal. This started after the last release and is blocking our team. Our workaround is manual and does not scale.",
+      "product_area": "billing",
+      "reported_severity": "low",
+      "status": "open",
+      "created_at": "2026-08-06T13:36:00Z",
+      "first_response_at": null,
+      "channel": "email",
+      "tags": [
+        "billing",
+        "regression"
+      ]
+    },
+    {
+      "ticket_id": "TKT-4113",
+      "customer_id": "CUS-209",
+      "subject": "Password reset email never arrives",
+      "body": "Password reset email never arrives. This is affecting customer-facing workflows today. This is affecting customer-facing workflows today.",
+      "product_area": "auth",
+      "reported_severity": "urgent",
+      "status": "open",
+      "created_at": "2026-08-07T14:49:00Z",
+      "first_response_at": "2026-08-07T15:15:00Z",
+      "channel": "chat",
+      "tags": [
+        "auth",
+        "how-to"
+      ]
+    },
+    {
+      "ticket_id": "TKT-4114",
+      "customer_id": "CUS-216",
+      "subject": "Pagination cursor returns duplicates",
+      "body": "Pagination cursor returns duplicates. This is affecting customer-facing workflows today. This is affecting customer-facing workflows today.",
+      "product_area": "api",
+      "reported_severity": "high",
+      "status": "open",
+      "created_at": "2026-08-01T15:02:00Z",
+      "first_response_at": "2026-08-01T16:15:00Z",
+      "channel": "portal",
+      "tags": [
+        "api",
+        "outage"
+      ]
+    },
+    {
+      "ticket_id": "TKT-4115",
+      "customer_id": "CUS-223",
+      "subject": "Filters reset when navigating back",
+      "body": "Filters reset when navigating back. This started after the last release and is blocking our team. Our workaround is manual and does not scale.",
+      "product_area": "dashboard",
+      "reported_severity": "normal",
+      "status": "open",
+      "created_at": "2026-08-02T16:15:00Z",
+      "first_response_at": "2026-08-02T17:15:00Z",
+      "channel": "email",
+      "tags": [
+        "billing-dispute",
+        "dashboard"
+      ]
+    },
+    {
+      "ticket_id": "TKT-4116",
+      "customer_id": "CUS-230",
+      "subject": "Offline mode loses edits",
+      "body": "Offline mode loses edits. This started after the last release and is blocking our team. This started after the last release and is blocking our team.",
+      "product_area": "mobile",
+      "reported_severity": "low",
+      "status": "open",
+      "created_at": "2026-08-03T09:28:00Z",
+      "first_response_at": null,
+      "channel": "chat",
+      "tags": [
+        "mobile",
+        "regression"
+      ]
+    },
+    {
+      "ticket_id": "TKT-4117",
+      "customer_id": "CUS-237",
+      "subject": "Salesforce field mapping ignored",
+      "body": "Salesforce field mapping ignored. This is affecting customer-facing workflows today. We have reproduced it on three separate accounts.",
+      "product_area": "integrations",
+      "reported_severity": "urgent",
+      "status": "open",
+      "created_at": "2026-08-04T10:41:00Z",
+      "first_response_at": "2026-08-04T11:15:00Z",
+      "channel": "portal",
+      "tags": [
+        "how-to",
+        "integrations"
+      ]
+    },
+    {
+      "ticket_id": "TKT-4118",
+      "customer_id": "CUS-203",
+      "subject": "Wrong seat count billed",
+      "body": "Wrong seat count billed. Our workaround is manual and does not scale. We have reproduced it on three separate accounts.",
+      "product_area": "billing",
+      "reported_severity": "high",
+      "status": "pending",
+      "created_at": "2026-08-05T11:54:00Z",
+      "first_response_at": "2026-08-05T12:15:00Z",
+      "channel": "email",
+      "tags": [
+        "billing",
+        "outage"
+      ]
+    },
+    {
+      "ticket_id": "TKT-4119",
+      "customer_id": "CUS-210",
+      "subject": "SAML metadata mismatch",
+      "body": "SAML metadata mismatch. Happens intermittently, roughly one in five attempts. Our workaround is manual and does not scale.",
+      "product_area": "auth",
+      "reported_severity": "normal",
+      "status": "open",
+      "created_at": "2026-08-06T12:07:00Z",
+      "first_response_at": "2026-08-06T13:15:00Z",
+      "channel": "chat",
+      "tags": [
+        "auth",
+        "billing-dispute"
+      ]
+    },
+    {
+      "ticket_id": "TKT-4120",
+      "customer_id": "CUS-217",
+      "subject": "API key rotation broke prod",
+      "body": "API key rotation broke prod. This started after the last release and is blocking our team. This is affecting customer-facing workflows today.",
+      "product_area": "api",
+      "reported_severity": "low",
+      "status": "open",
+      "created_at": "2026-08-07T13:20:00Z",
+      "first_response_at": null,
+      "channel": "portal",
+      "tags": [
+        "api",
+        "regression"
+      ]
+    },
+    {
+      "ticket_id": "TKT-4121",
+      "customer_id": "CUS-224",
+      "subject": "Dark mode contrast unreadable",
+      "body": "Dark mode contrast unreadable. We have reproduced it on three separate accounts. This started after the last release and is blocking our team.",
+      "product_area": "dashboard",
+      "reported_severity": "urgent",
+      "status": "open",
+      "created_at": "2026-08-01T14:33:00Z",
+      "first_response_at": "2026-08-01T15:15:00Z",
+      "channel": "email",
+      "tags": [
+        "dashboard",
+        "how-to"
+      ]
+    },
+    {
+      "ticket_id": "TKT-4122",
+      "customer_id": "CUS-231",
+      "subject": "Biometric unlock fails after update",
+      "body": "Biometric unlock fails after update. We have reproduced it on three separate accounts. We have reproduced it on three separate accounts.",
+      "product_area": "mobile",
+      "reported_severity": "high",
+      "status": "open",
+      "created_at": "2026-08-02T15:46:00Z",
+      "first_response_at": "2026-08-02T16:15:00Z",
+      "channel": "chat",
+      "tags": [
+        "mobile",
+        "outage"
+      ]
+    },
+    {
+      "ticket_id": "TKT-4123",
+      "customer_id": "CUS-238",
+      "subject": "GitHub webhook 401s",
+      "body": "GitHub webhook 401s. We have reproduced it on three separate accounts. We have reproduced it on three separate accounts.",
+      "product_area": "integrations",
+      "reported_severity": "normal",
+      "status": "open",
+      "created_at": "2026-08-03T16:59:00Z",
+      "first_response_at": "2026-08-03T17:15:00Z",
+      "channel": "portal",
+      "tags": [
+        "billing-dispute",
+        "integrations"
+      ]
+    },
+    {
+      "ticket_id": "TKT-4124",
+      "customer_id": "CUS-204",
+      "subject": "Annual plan proration looks wrong",
+      "body": "Annual plan proration looks wrong. Happens intermittently, roughly one in five attempts. This started after the last release and is blocking our team.",
+      "product_area": "billing",
+      "reported_severity": "low",
+      "status": "open",
+      "created_at": "2026-08-04T09:12:00Z",
+      "first_response_at": null,
+      "channel": "email",
+      "tags": [
+        "billing",
+        "regression"
+      ]
+    },
+    {
+      "ticket_id": "TKT-4125",
+      "customer_id": "CUS-211",
+      "subject": "Session expires every 5 minutes",
+      "body": "Session expires every 5 minutes. We have reproduced it on three separate accounts. This started after the last release and is blocking our team.",
+      "product_area": "auth",
+      "reported_severity": "urgent",
+      "status": "open",
+      "created_at": "2026-08-05T10:25:00Z",
+      "first_response_at": "2026-08-05T11:15:00Z",
+      "channel": "chat",
+      "tags": [
+        "auth",
+        "how-to"
+      ]
+    },
+    {
+      "ticket_id": "TKT-4126",
+      "customer_id": "CUS-218",
+      "subject": "Timeouts on bulk export endpoint",
+      "body": "Timeouts on bulk export endpoint. This started after the last release and is blocking our team. Our workaround is manual and does not scale.",
+      "product_area": "api",
+      "reported_severity": "high",
+      "status": "open",
+      "created_at": "2026-08-06T11:38:00Z",
+      "first_response_at": "2026-08-06T12:15:00Z",
+      "channel": "portal",
+      "tags": [
+        "api",
+        "outage"
+      ]
+    },
+    {
+      "ticket_id": "TKT-4127",
+      "customer_id": "CUS-225",
+      "subject": "Saved view disappeared",
+      "body": "Saved view disappeared. This is affecting customer-facing workflows today. This started after the last release and is blocking our team.",
+      "product_area": "dashboard",
+      "reported_severity": "normal",
+      "status": "pending",
+      "created_at": "2026-08-07T12:51:00Z",
+      "first_response_at": "2026-08-07T13:15:00Z",
+      "channel": "email",
+      "tags": [
+        "billing-dispute",
+        "dashboard"
+      ]
+    },
+    {
+      "ticket_id": "TKT-4128",
+      "customer_id": "CUS-232",
+      "subject": "Attachments fail to upload on cellular",
+      "body": "Attachments fail to upload on cellular. This started after the last release and is blocking our team. Happens intermittently, roughly one in five attempts.",
+      "product_area": "mobile",
+      "reported_severity": "low",
+      "status": "open",
+      "created_at": "2026-08-01T13:04:00Z",
+      "first_response_at": null,
+      "channel": "chat",
+      "tags": [
+        "mobile",
+        "regression"
+      ]
+    },
+    {
+      "ticket_id": "TKT-4129",
+      "customer_id": "CUS-239",
+      "subject": "Zapier trigger fires twice",
+      "body": "Zapier trigger fires twice. Happens intermittently, roughly one in five attempts. This is affecting customer-facing workflows today.",
+      "product_area": "integrations",
+      "reported_severity": "urgent",
+      "status": "open",
+      "created_at": "2026-08-02T14:17:00Z",
+      "first_response_at": "2026-08-02T15:15:00Z",
+      "channel": "portal",
+      "tags": [
+        "how-to",
+        "integrations"
+      ]
+    }
+  ],
+  "customers": {
+    "CUS-200": {
+      "customer_id": "CUS-200",
+      "company": "Northwind Labs",
+      "plan": "free",
+      "arr_usd": 0,
+      "sla_hours": null,
+      "csat_90d": 3.2,
+      "open_tickets": 1
+    },
+    "CUS-201": {
+      "customer_id": "CUS-201",
+      "company": "Northwind Analytics",
+      "plan": "pro",
+      "arr_usd": 12000,
+      "sla_hours": 24,
+      "csat_90d": 3.4,
+      "open_tickets": 2
+    },
+    "CUS-202": {
+      "customer_id": "CUS-202",
+      "company": "Northwind Robotics",
+      "plan": "team",
+      "arr_usd": 48000,
+      "sla_hours": 8,
+      "csat_90d": 3.6,
+      "open_tickets": 3
+    },
+    "CUS-203": {
+      "customer_id": "CUS-203",
+      "company": "Northwind Health",
+      "plan": "enterprise",
+      "arr_usd": 210000,
+      "sla_hours": 4,
+      "csat_90d": 3.8,
+      "open_tickets": 4
+    },
+    "CUS-204": {
+      "customer_id": "CUS-204",
+      "company": "Northwind Retail",
+      "plan": "free",
+      "arr_usd": 0,
+      "sla_hours": null,
+      "csat_90d": 4.0,
+      "open_tickets": 1
+    },
+    "CUS-207": {
+      "customer_id": "CUS-207",
+      "company": "Northwind Labs",
+      "plan": "pro",
+      "arr_usd": 12000,
+      "sla_hours": 24,
+      "csat_90d": 4.2,
+      "open_tickets": 2
+    },
+    "CUS-208": {
+      "customer_id": "CUS-208",
+      "company": "Northwind Analytics",
+      "plan": "team",
+      "arr_usd": 48000,
+      "sla_hours": 8,
+      "csat_90d": 4.4,
+      "open_tickets": 3
+    },
+    "CUS-209": {
+      "customer_id": "CUS-209",
+      "company": "Northwind Robotics",
+      "plan": "enterprise",
+      "arr_usd": 210000,
+      "sla_hours": 4,
+      "csat_90d": 4.6,
+      "open_tickets": 4
+    },
+    "CUS-210": {
+      "customer_id": "CUS-210",
+      "company": "Northwind Health",
+      "plan": "free",
+      "arr_usd": 0,
+      "sla_hours": null,
+      "csat_90d": 4.8,
+      "open_tickets": 1
+    },
+    "CUS-211": {
+      "customer_id": "CUS-211",
+      "company": "Northwind Retail",
+      "plan": "pro",
+      "arr_usd": 12000,
+      "sla_hours": 24,
+      "csat_90d": 3.2,
+      "open_tickets": 2
+    },
+    "CUS-214": {
+      "customer_id": "CUS-214",
+      "company": "Northwind Labs",
+      "plan": "team",
+      "arr_usd": 48000,
+      "sla_hours": 8,
+      "csat_90d": 3.4,
+      "open_tickets": 3
+    },
+    "CUS-215": {
+      "customer_id": "CUS-215",
+      "company": "Northwind Analytics",
+      "plan": "enterprise",
+      "arr_usd": 210000,
+      "sla_hours": 4,
+      "csat_90d": 3.6,
+      "open_tickets": 4
+    },
+    "CUS-216": {
+      "customer_id": "CUS-216",
+      "company": "Northwind Robotics",
+      "plan": "free",
+      "arr_usd": 0,
+      "sla_hours": null,
+      "csat_90d": 3.8,
+      "open_tickets": 1
+    },
+    "CUS-217": {
+      "customer_id": "CUS-217",
+      "company": "Northwind Health",
+      "plan": "pro",
+      "arr_usd": 12000,
+      "sla_hours": 24,
+      "csat_90d": 4.0,
+      "open_tickets": 2
+    },
+    "CUS-218": {
+      "customer_id": "CUS-218",
+      "company": "Northwind Retail",
+      "plan": "team",
+      "arr_usd": 48000,
+      "sla_hours": 8,
+      "csat_90d": 4.2,
+      "open_tickets": 3
+    },
+    "CUS-221": {
+      "customer_id": "CUS-221",
+      "company": "Northwind Labs",
+      "plan": "enterprise",
+      "arr_usd": 210000,
+      "sla_hours": 4,
+      "csat_90d": 4.4,
+      "open_tickets": 4
+    },
+    "CUS-222": {
+      "customer_id": "CUS-222",
+      "company": "Northwind Analytics",
+      "plan": "free",
+      "arr_usd": 0,
+      "sla_hours": null,
+      "csat_90d": 4.6,
+      "open_tickets": 1
+    },
+    "CUS-223": {
+      "customer_id": "CUS-223",
+      "company": "Northwind Robotics",
+      "plan": "pro",
+      "arr_usd": 12000,
+      "sla_hours": 24,
+      "csat_90d": 4.8,
+      "open_tickets": 2
+    },
+    "CUS-224": {
+      "customer_id": "CUS-224",
+      "company": "Northwind Health",
+      "plan": "team",
+      "arr_usd": 48000,
+      "sla_hours": 8,
+      "csat_90d": 3.2,
+      "open_tickets": 3
+    },
+    "CUS-225": {
+      "customer_id": "CUS-225",
+      "company": "Northwind Retail",
+      "plan": "enterprise",
+      "arr_usd": 210000,
+      "sla_hours": 4,
+      "csat_90d": 3.4,
+      "open_tickets": 4
+    },
+    "CUS-228": {
+      "customer_id": "CUS-228",
+      "company": "Northwind Labs",
+      "plan": "free",
+      "arr_usd": 0,
+      "sla_hours": null,
+      "csat_90d": 3.6,
+      "open_tickets": 1
+    },
+    "CUS-229": {
+      "customer_id": "CUS-229",
+      "company": "Northwind Analytics",
+      "plan": "pro",
+      "arr_usd": 12000,
+      "sla_hours": 24,
+      "csat_90d": 3.8,
+      "open_tickets": 2
+    },
+    "CUS-230": {
+      "customer_id": "CUS-230",
+      "company": "Northwind Robotics",
+      "plan": "team",
+      "arr_usd": 48000,
+      "sla_hours": 8,
+      "csat_90d": 4.0,
+      "open_tickets": 3
+    },
+    "CUS-231": {
+      "customer_id": "CUS-231",
+      "company": "Northwind Health",
+      "plan": "enterprise",
+      "arr_usd": 210000,
+      "sla_hours": 4,
+      "csat_90d": 4.2,
+      "open_tickets": 4
+    },
+    "CUS-232": {
+      "customer_id": "CUS-232",
+      "company": "Northwind Retail",
+      "plan": "free",
+      "arr_usd": 0,
+      "sla_hours": null,
+      "csat_90d": 4.4,
+      "open_tickets": 1
+    },
+    "CUS-235": {
+      "customer_id": "CUS-235",
+      "company": "Northwind Labs",
+      "plan": "pro",
+      "arr_usd": 12000,
+      "sla_hours": 24,
+      "csat_90d": 4.6,
+      "open_tickets": 2
+    },
+    "CUS-236": {
+      "customer_id": "CUS-236",
+      "company": "Northwind Analytics",
+      "plan": "team",
+      "arr_usd": 48000,
+      "sla_hours": 8,
+      "csat_90d": 4.8,
+      "open_tickets": 3
+    },
+    "CUS-237": {
+      "customer_id": "CUS-237",
+      "company": "Northwind Robotics",
+      "plan": "enterprise",
+      "arr_usd": 210000,
+      "sla_hours": 4,
+      "csat_90d": 3.2,
+      "open_tickets": 4
+    },
+    "CUS-238": {
+      "customer_id": "CUS-238",
+      "company": "Northwind Health",
+      "plan": "free",
+      "arr_usd": 0,
+      "sla_hours": null,
+      "csat_90d": 3.4,
+      "open_tickets": 1
+    },
+    "CUS-239": {
+      "customer_id": "CUS-239",
+      "company": "Northwind Retail",
+      "plan": "pro",
+      "arr_usd": 12000,
+      "sla_hours": 24,
+      "csat_90d": 3.6,
+      "open_tickets": 2
+    }
+  },
+  "kb": [
+    {
+      "doc_id": "KB-101",
+      "title": "Resolving duplicate charges",
+      "product_area": "billing",
+      "summary": "Duplicate charges are usually a retry after a soft decline. Void the second authorization and issue a refund from the billing console."
+    },
+    {
+      "doc_id": "KB-114",
+      "title": "SSO login loops",
+      "product_area": "auth",
+      "summary": "A login loop almost always means the SAML ACS URL or clock skew is wrong. Re-upload IdP metadata and verify NTP on the IdP."
+    },
+    {
+      "doc_id": "KB-132",
+      "title": "Handling 429 responses",
+      "product_area": "api",
+      "summary": "Rate limits return 429 with retry-after when the bucket is per-key. A missing retry-after means the limit was org-wide; back off exponentially."
+    },
+    {
+      "doc_id": "KB-147",
+      "title": "Blank charts in Safari",
+      "product_area": "dashboard",
+      "summary": "Safari blocks the canvas worker without a same-site cookie. Clearing site data and upgrading to 17.4+ resolves it."
+    },
+    {
+      "doc_id": "KB-158",
+      "title": "Mobile cold-start crashes",
+      "product_area": "mobile",
+      "summary": "Cold-start crashes after an upgrade are a stale realm migration. Force a re-sync from Settings > Storage > Rebuild cache."
+    },
+    {
+      "doc_id": "KB-166",
+      "title": "Duplicate Slack notifications",
+      "product_area": "integrations",
+      "summary": "Duplicates mean two webhooks target the same channel, usually after a workspace re-install. Remove the older subscription."
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+# secrets
+.env
+.env.local
+
+# amortize runtime state (memory, spill files, local ledger, compiled skills)
+.amort/
+
+# vendored third-party clones (EverOS is cloned here; see SETUP_REPORT.md)
+vendor/
+
+# python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.venv/
+build/
+dist/
+
+# tooling
+.ruff_cache/
+.pytest_cache/
+uv.lock.bak
+
+# demo artifacts
+demo_report.json
+
+# macos
+.DS_Store
+vendor/
