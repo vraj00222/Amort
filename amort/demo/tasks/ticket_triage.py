@@ -180,7 +180,8 @@ TOOLS: list[dict[str, Any]] = [
         "description": (
             "Evaluate each ticket against its customer's contractual SLA and report whether the "
             "first-response clock has already been breached, plus hours remaining where it has "
-            "not. Accounts for tickets that have received no first response at all."
+            "not, plus the customer's plan tier (needed to set priority). Accounts for tickets "
+            "that have received no first response at all."
         ),
         "input_schema": {
             "type": "object",
@@ -280,13 +281,23 @@ SYSTEM = (
     "You are a support triage agent for a B2B SaaS company. You have tools for reading tickets, "
     "looking up customers, searching the knowledge base, classifying, checking SLAs, assigning "
     "queues, drafting replies, and logging outcomes.\n\n"
-    "Procedure:\n"
+    "Procedure — exactly four tool calls, in this order, each tool called AT MOST ONCE with all "
+    "ticket ids batched (never one call per ticket):\n"
     "1. fetch_tickets for the requested window.\n"
     "2. classify every ticket in a single batched call.\n"
-    "3. check_sla for every ticket in a single batched call.\n"
-    "4. assign_queue for every ticket, choosing the queue that matches its product area and a "
-    "priority that reflects SLA breach and customer plan.\n"
+    "3. check_sla for every ticket in a single batched call (its result includes each "
+    "customer's plan tier — you do not need get_customer).\n"
+    "4. assign_queue for every ticket: the queue that matches its product area "
+    "(billing→billing-ops, auth→identity, api→platform-api, dashboard→web-app, mobile→mobile, "
+    "integrations→partner-integrations).\n"
     "5. Return the final triage report.\n\n"
+    "Set priority with exactly this rule, using check_sla's `breached` and `plan` fields:\n"
+    "  P0 = breached AND plan is enterprise\n"
+    "  P1 = breached OR plan is enterprise (but not both)\n"
+    "  P2 = neither, AND (reported_severity is high or urgent, OR plan is team)\n"
+    "  P3 = everything else\n"
+    "sla_breach is check_sla's `breached` verbatim. draft_reply_needed is true if and only if "
+    "the ticket's first_response_at is null.\n\n"
     "The final message must be a single JSON object and nothing else — no prose, no code fence:\n"
     '{"task": "ticket_triage", "ticket_count": <int>, "report": [\n'
     '  {"ticket_id": str, "queue": str, "priority": "P0"|"P1"|"P2"|"P3", '
@@ -396,9 +407,11 @@ def execute_tool(name: str, args: dict[str, Any]) -> Any:
                 out.append({"ticket_id": tid, "error": "unknown ticket"})
                 continue
             breached, remaining = _sla_for(ticket)
+            customer = CUSTOMERS.get(ticket["customer_id"], {})
             out.append({
                 "ticket_id": tid,
-                "sla_hours": CUSTOMERS.get(ticket["customer_id"], {}).get("sla_hours"),
+                "sla_hours": customer.get("sla_hours"),
+                "plan": customer.get("plan", "free"),
                 "breached": breached,
                 "hours_remaining": remaining,
                 "first_response_at": ticket["first_response_at"],
@@ -633,7 +646,7 @@ def run_live(
     for _turn in range(max_turns):
         started = time.perf_counter()
         response = client.chat.completions.create(
-            model=model, max_tokens=8192, temperature=0,
+            model=model, max_tokens=8192, temperature=0, seed=20260807,
             tools=TOOLS_OPENAI, messages=messages,
         )
         wall_ms = int((time.perf_counter() - started) * 1000)
