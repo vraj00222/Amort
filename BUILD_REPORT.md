@@ -20,7 +20,19 @@ accuracy vs ground truth: all four runs incorrect
 ~10 llm / 71 tool calls per run
 ```
 
-Diagnosis: the fixture's priority rule was never stated in the prompt, so deepseek guessed (differently per run), and `get_customer` (single-id) forced ~30 per-ticket calls — trajectory divergence + 140k tokens + 2-3 min per run. **Fix (commit `a8c19db`): the task is now fully specified** — explicit P0-P3 rubric in SYSTEM, strict batching ("each tool at most once, all ids batched"), `check_sla` returns the customer `plan` tier, `seed=20260807`. Parity/accuracy now measure the layers, not model noise. Second verification run: *(pending — recorded below when complete)*.
+Diagnosis: the fixture's priority rule was never stated in the prompt, so deepseek guessed (differently per run), and `get_customer` (single-id) forced ~30 per-ticket calls — trajectory divergence + 140k tokens + 2-3 min per run. **Fix (commit `a8c19db`): the task is now fully specified** — explicit P0-P3 rubric in SYSTEM, strict batching ("each tool at most once, all ids batched"), `check_sla` returns the customer `plan` tier, `seed=20260807`. Parity/accuracy now measure the layers, not model noise.
+
+**Second verification run** exposed one more spec bug the grader caught: `TASK_PROMPT` said "open tickets" while `expected_report()` covers all 30 fixture tickets (4 are `pending`) — accuracy was unachievable for a literal reader; and A_cold failed by narrating prose until its output budget died. Fixed in `9457b38` (prompt says any status; output must start with `{`; `sla_breach` copied verbatim).
+
+**Third verification run — clean across the board** (ledger=snowflake · memory=everos):
+
+```
+A_cold 47,523 tok · $0.008 · 34.7s     B_cold 46,866 tok · $0.008 · 30.9s  (Δ -1%)
+A_warm 48,150 tok · $0.008 · 35.0s     B_warm 45,491 tok · $0.008 · 31.2s  (Δ -6% · parity ✓)
+A cold vs B cold: parity ✓ (120 fields) · B cold vs B warm: parity ✓ · accuracy: all runs correct ✓
+```
+
+The ±few-% Δ is honest run-to-run noise around 0 — exactly right while both layers are stubs. **T0 acceptance met**; this is the baseline the layers must beat.
 
 Also this phase: GitHub remote wired (`vraj00222/Amort`), TEAM.md for contributors, license aligned to the repo's MIT LICENSE.
 
