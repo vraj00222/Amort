@@ -60,18 +60,61 @@ Known quirk (B's finding, kept honest): fixture ticket TKT-4116 is a ~50% transc
 
 `before_request` now tries Layer 2 first: fingerprint(system, last user msg, tool names) → `search_skill` → on a confident **verified** hit, the catalogue is cut to `tools_required` only and the compiled plan is injected as its own system message (the client's system message is never modified; injection is deterministic per turn; capped at `AMORT_INJECT_BUDGET`). `meta.layer2 = {plan_replay, skill_id, injected_tokens, tools_kept/dropped}` lands on the StepEvent. Kill switches: `AMORT_LIGHTEN`, `AMORT_PLAN_REPLAY`. `accept_layer1` pins `AMORT_PLAN_REPLAY=false` in its spawned proxies so a verified skill can't hijack its A/B.
 
+**PLAN REPLAY status (cut line applied, stated plainly):** the mechanism is live and correct — verified-skill match injects the plan and cuts the catalogue, `meta.layer2` lands on ledger rows. But its *acceptance comparison* is not demo-grade: against the procedure-locked demo prompt an injected plan can only add tokens (+54% measured — there is no exploration to eliminate), and on the honest exploration-prompt arm (`SYSTEM_EXPLORE`, both arms) the plan-replay run flaked on final-message prose/truncation before a token comparison could even be graded. Decision: FULL REPLAY is the demo path (−97.7% measured); plan replay stays wired for real clients behind `AMORT_PLAN_REPLAY` (default on), its check runs only under `PLAN_REPLAY=1`, and no savings number is claimed for it anywhere. Follow-up for tomorrow: directive should pin the final-message format and be measured on multi-task exploration workloads.
+
 **Layer-1 live variance, stated plainly:** single-pair A/B measurements on this task ranged **−25.3% to +7%** across the day (deepseek trajectory wobble: the OFF arm itself varies by ±1 full turn). Two structural leaks were found via ledger traces and fixed (param-sketch hints for nested schemas; digest keeping timestamps; explicit "parallel calls work on stub tools" steering). The number the demo shows is whatever the run measures.
 
 ## Workstream C — SHOWTIME
 
 *(pending merge)*
 
+## G4 — Final rehearsal (both runs green, live)
+
+Run 1: cold −16%, warm −97% parity ✓, accuracy ✓. **Run 2 (recorded as `demo_report.json`, the offline replay):**
+
+```
+A_cold  48,703 tok  $0.0081  36.5s      B_cold  34,975 tok  $0.0060  39.8s   Δ −28% tok / −26% $
+A_warm  39,403 tok  $0.0067  33.5s      B_warm   1,099 tok  $0.0002   7.3s   Δ −97% tok / −97% $ · parity ✓
+parity: A_cold≡B_cold 120 fields · B_cold≡B_warm 120 fields · accuracy: all correct
+skill skl_790ab652c2c2 verified · ledger=snowflake · memory=everos · simulated=false
+```
+
+Exact run_ids + per-cell tokens: `submission/METRICS.md` (truth-lock filled from this run).
+
 ## Gates
 
 | Gate | When | Result |
 |---|---|---|
 | G0 smokes + ruff + quirk-greps | after T0 | accept tests fail-by-design (test-first); smokes green at T0 commits |
+| G-C (C merge) | level 0 + stage/dash tests | PASS |
+| G-A (A merge) | level 2 | PASS after 2 integration fixes (both found by the gate failing honestly) |
+| G-B (B merge + wiring) | level 3 | PASS on (a)-(c) + L1 live; plan-replay check (d) cut with note |
+| G4 rehearsal ×2 | full live demo, twice | PASS · run 2 recorded |
 
 ## Demo-day runbook
 
-*(written at G4)*
+**Pre-flight (5 min before):**
+1. `.env` has `NOVITA_API_KEY` (Snowflake PAT expires Aug 8 — if it died, `AMORT_LEDGER=auto` degrades to SQLite and says so; the demo still runs).
+2. EverOS up: `curl -s localhost:8000/health` → `"status":"ok"` (else the local markdown store takes over silently — also fine).
+3. `git pull` — teammates push to main.
+
+**The three terminals:**
+```bash
+# T1 — the proxy. PLAN_REPLAY off so lane B-cold stays a true cold run
+#      (a verified ticket_triage skill already in the store would otherwise
+#      plan-inject it; FULL REPLAY in the repeat row is unaffected):
+AMORT_PLAN_REPLAY=false uv run amort up
+
+# T2 — the show (add --stage for the projector page on :4700):
+uv run amort demo --task ticket_triage --stage
+
+# T3 — after the run:
+uv run amort stats
+uv run amort dash
+```
+
+**If the network/upstream dies on stage:** `uv run amort demo --offline --stage --replay demo_report.json` — replays the recorded good run, labelled as a replay. If the stage page dies: the rich table in T2 is the fallback (cut line 4).
+
+**The universality beat:** in any terminal, `export ANTHROPIC_BASE_URL=http://127.0.0.1:4000`, open Claude Code, `/status` shows the Amortize base URL; its traffic lands in the ledger live (streaming passes through untouched by design — Layer 1 scopes to non-streaming today).
+
+**Reset between rehearsals (optional):** skills accumulate honestly (`runs_observed` climbs). To demo the compile step from scratch, delete `.amort/memory/**/skills/skill_*ticket*` before T2 — otherwise the repeat row replays the existing verified skill and the compile line says it re-distilled (version bumps). Both arcs are true; pick one.

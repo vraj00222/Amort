@@ -56,7 +56,7 @@ claim.
 | Gate | Target | Executable source |
 |---|---:|---|
 | Layer 1 schema reduction | ≥60% | **PASS: 65.4% current checkout** · `scripts/accept_layer1.py` |
-| Layer 2 warm cost reduction | ≥85% | Pending · `scripts/accept_layer2.py` |
+| Layer 2 warm cost reduction | ≥85% | **PASS: 96.7-98.3% across runs** · `scripts/accept_layer2.py` |
 | Output quality | Field-exact parity and correct ground truth | demo grader + acceptance scripts |
 
 ## Final submission run
@@ -64,55 +64,55 @@ claim.
 Populate only after both implementation merges and a clean live run.
 
 ```yaml
-commit_sha: TBD
-run_started_at: TBD
-model: TBD
-ledger_backend: TBD
-memory_backend: TBD
+commit_sha: a6e9380  # code state of the run (docs-only edits followed in the day-one commit)
+run_started_at: "2026-08-07T20:08:07Z"
+model: deepseek/deepseek-v4-flash
+ledger_backend: snowflake
+memory_backend: everos
 simulated: false
 
 direct_cold:
-  run_id: TBD
-  input_tokens: TBD
-  output_tokens: TBD
-  cost_usd: TBD
-  wall_ms: TBD
+  run_id: run_5f4b24f2739949aa
+  input_tokens: 42665
+  output_tokens: 6038
+  cost_usd: 0.008146
+  wall_ms: 36486
 
 amortize_cold:
-  run_id: TBD
-  input_tokens: TBD
-  output_tokens: TBD
-  cost_usd: TBD
-  wall_ms: TBD
+  run_id: run_23fa58949c5e41da
+  input_tokens: 27882
+  output_tokens: 7093
+  cost_usd: 0.005993
+  wall_ms: 39797
 
 direct_warm:
-  run_id: TBD
-  input_tokens: TBD
-  output_tokens: TBD
-  cost_usd: TBD
-  wall_ms: TBD
+  run_id: run_bd69812af669403c
+  input_tokens: 33803
+  output_tokens: 5600
+  cost_usd: 0.006661
+  wall_ms: 33528
 
 amortize_warm:
-  run_id: TBD
-  input_tokens: TBD
-  output_tokens: TBD
-  cost_usd: TBD
-  wall_ms: TBD
-  skill_id: TBD
+  run_id: run_d788faab9af64b19
+  input_tokens: 626
+  output_tokens: 473
+  cost_usd: 0.00022
+  wall_ms: 7258
+  skill_id: skl_790ab652c2c2
 
-layer1_schema_reduction_pct: TBD
-layer1_end_to_end_cost_delta_pct: TBD
-layer2_warm_cost_reduction_pct: TBD
-cold_parity_fields: TBD
-cold_accuracy_fields: TBD
-warm_parity_fields: TBD
-warm_accuracy_fields: TBD
-all_cells_ground_truth_pass: TBD
+layer1_schema_reduction_pct: 65.4          # accept_layer1 unit measure, stub text counted
+layer1_end_to_end_cost_delta_pct: -26.4    # tokens -28.2; run-to-run noise ~±10 pts — quote as "~25-30%", never a fixed constant
+layer2_warm_cost_reduction_pct: -96.7      # tokens -97.2; deterministic replay, stable
+cold_parity_fields: 120
+cold_accuracy_fields: 120
+warm_parity_fields: 120
+warm_accuracy_fields: 120
+all_cells_ground_truth_pass: true
 
-compile_cost_usd: TBD
-direct_repeat_cost_usd: TBD
-guarded_replay_cost_usd: TBD
-break_even_repeats: TBD
+compile_cost_usd: 0.00056742               # ledger: STEPS name='compile' under run_23fa5894…, 745 in / 1,654 out
+direct_repeat_cost_usd: 0.006661
+guarded_replay_cost_usd: 0.00022
+break_even_repeats: 0.09                   # compile pays for itself 9% into the FIRST repeat
 ```
 
 ## Calculation definitions
