@@ -30,26 +30,70 @@ from amort.ledger.pricing import pricing_note, unknown_models
 
 st.set_page_config(page_title="amortize", page_icon="📉", layout="wide")
 
-# Inline only — CONTRACTS.md forbids CDN assets, and a dashboard that needs the
-# network to look right is a dashboard that breaks at a booth on venue wifi.
-# Lane colours match the stage view (`stage.html`) so the two screens read as one
-# system: grey = direct/baseline, green = through Amortize.
-LANE_BASELINE = "#5b6b85"
-LANE_AMORTIZE = "#34d399"
+# ── palette ──────────────────────────────────────────────────────────────────
+# The same roles as `stage.html`, so the two screens read as one product: a
+# blue-ink canvas with every neutral tinted to the same hue, and a warm/cool
+# opposition carrying the data — bronze is the money burning on the direct path,
+# jade is the engineered one. Within a lane, cold vs warm is a lightness step,
+# not a new hue: hue means lane, lightness means mode.
+#
+# Inline only. CONTRACTS.md forbids CDN assets, and a dashboard that needs the
+# network to look right is one that breaks at a booth on venue wifi.
+#
+# Contrast against the panel: fg 16.7:1 · dim 8.7:1 · label 5.3:1 · jade 10.7:1
+# · bronze 6.6:1. Verified, not eyeballed.
+INK       = "#080d12"
+PANEL     = "#12181e"
+PANEL_2   = "#1b222b"
+LINE      = "#2a323d"
+FG        = "#f5f7f9"
+DIM       = "#abb5c2"
+LABEL     = "#828d9c"
+BRONZE    = "#ba9776"   # direct / baseline
+BRONZE_LO = "#8c6e52"
+JADE      = "#4edfb8"   # through amortize
+JADE_LO   = "#1fb895"
+
+SERIES_COLOURS = {
+    "baseline/cold": BRONZE,
+    "baseline/warm": BRONZE_LO,
+    "amortize/cold": JADE_LO,
+    "amortize/warm": JADE,
+}
 
 st.markdown(
-    """
+    f"""
     <style>
-      .block-container { padding-top: 2.4rem; max-width: 1500px; }
-      h1 { letter-spacing: .04em; font-weight: 700; }
-      [data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; font-size: 1.9rem; }
-      [data-testid="stMetricLabel"] { letter-spacing: .12em; text-transform: uppercase;
-                                      font-size: .74rem; opacity: .72; }
-      [data-testid="stMetric"] { padding: .5rem .9rem; border-radius: .6rem;
-                                 background: rgba(255,255,255,.025); }
-      div[data-testid="stDataFrame"] { font-variant-numeric: tabular-nums; }
-      .stCaption, [data-testid="stCaptionContainer"] { opacity: .78; }
-      hr { margin: 1.6rem 0; }
+      .stApp {{ background: {INK}; }}
+      .block-container {{ padding-top: 2.2rem; max-width: 1560px; }}
+      h1 {{ letter-spacing: .06em; font-weight: 800; color: {FG}; }}
+      h2, h3 {{ color: {FG}; letter-spacing: .01em; }}
+
+      /* KPI tiles: one elevation, declared as a border — not a border under a
+         shadow, which is the ghost card. */
+      [data-testid="stMetric"] {{
+        background: {PANEL}; border: 1px solid {LINE};
+        padding: .85rem 1.1rem; border-radius: 12px;
+      }}
+      [data-testid="stMetricValue"] {{
+        font-variant-numeric: tabular-nums; font-size: 1.85rem;
+        font-weight: 700; color: {FG};
+      }}
+      [data-testid="stMetricLabel"] {{
+        letter-spacing: .16em; text-transform: uppercase;
+        font-size: .7rem; font-weight: 700; color: {LABEL};
+      }}
+      [data-testid="stMetricDelta"] {{ font-variant-numeric: tabular-nums; }}
+
+      div[data-testid="stDataFrame"] {{ font-variant-numeric: tabular-nums; }}
+      [data-testid="stCaptionContainer"] {{ color: {LABEL}; }}
+      hr {{ margin: 1.7rem 0; border-color: {LINE}; }}
+
+      /* Browser surfaces ship with defaults belonging to no design system. */
+      ::selection {{ background: {JADE}; color: {INK}; }}
+      ::-webkit-scrollbar {{ width: 10px; height: 10px; }}
+      ::-webkit-scrollbar-track {{ background: {PANEL}; }}
+      ::-webkit-scrollbar-thumb {{ background: {LINE}; border-radius: 5px; }}
     </style>
     """,
     unsafe_allow_html=True,
@@ -110,8 +154,16 @@ if _base and _amort and _base[1] > 0:
 else:
     c3.metric("spend", f"${float(total_cost):,.4f}",
               help="Only one lane has runs, so there is nothing to compare it against.")
-c4.metric("ledger", writer.name)
-c5.metric("memory", str(settings.memory_dir.name))
+c4.metric("ledger", writer.name, help=f"Rows are read from {writer.name}.")
+# `memory_dir.name` is the folder's basename — it rendered as the literal word
+# "memory", which names nothing. The backend is what a reader needs.
+try:
+    from amort.skills.store_everos import get_store
+
+    _mem = get_store().backend_name
+except Exception:  # noqa: BLE001 — a broken store must not kill the header
+    _mem = "unavailable"
+c5.metric("memory", _mem, help=str(settings.memory_dir))
 
 if n_runs == 0:
     st.info(
@@ -151,27 +203,38 @@ if rows:
 
     df = pd.DataFrame(rows, columns=["started_at", "lane", "mode", "cost_usd", "tokens", "run_id"])
     df["started_at"] = pd.to_datetime(df["started_at"], format="mixed", utc=True)
-    df["n"] = range(1, len(df) + 1)
     df["lane_mode"] = df["lane"] + "/" + df["mode"]
 
-    metric = st.radio("plot", ["cost_usd", "tokens"], horizontal=True, label_visibility="collapsed")
-    pivot = df.pivot_table(index="n", columns="lane_mode", values=metric, aggfunc="mean")
+    # Index by each series' OWN run number, not the global row number.
+    # Indexing on a global counter put every series on a quarter of the x
+    # positions and NaN on the rest, so the amortization curve — the chart this
+    # whole dashboard exists for — rendered as four disconnected stubs across an
+    # empty field. `cumcount` makes each line continuous, and "run #" is the
+    # honest x-axis for a curve that claims cost falls as a lane repeats work.
+    df["seq"] = df.groupby("lane_mode").cumcount() + 1
 
-    # Colour by lane, not by arbitrary series order, so "green is cheaper" holds
-    # from the stage view through to here. Warm runs get the same hue as their
-    # cold sibling — the mode is the line style's job, not the colour's.
-    palette = [
-        LANE_AMORTIZE if str(col).startswith("amortize") else LANE_BASELINE
-        for col in pivot.columns
-    ]
-    st.line_chart(pivot, height=300, color=palette)
+    metric = st.radio("plot", ["cost_usd", "tokens"], horizontal=True, label_visibility="collapsed")
+    pivot = df.pivot_table(index="seq", columns="lane_mode", values=metric, aggfunc="mean")
+    pivot.index.name = "run # within lane"
+
+    # Hue carries the lane, lightness carries the mode — so the four series stay
+    # distinguishable without inventing four unrelated colours.
+    palette = [SERIES_COLOURS.get(str(c), LABEL) for c in pivot.columns]
+    st.line_chart(pivot, height=320, color=palette)
+
+    density = float(pivot.notna().sum().mean() / max(1, len(pivot)))
+    if density < 0.9:
+        st.caption(
+            f"Series cover {density:.0%} of run positions — lanes have run an unequal "
+            "number of times, so the shorter lines simply stop where that lane did."
+        )
 
     lanes = df.groupby("lane_mode").agg(
         runs=("run_id", "count"), avg_cost=("cost_usd", "mean"), avg_tokens=("tokens", "mean")
     )
     st.dataframe(
         lanes.style.format({"avg_cost": "${:.4f}", "avg_tokens": "{:,.0f}"}).bar(
-            subset=["avg_cost"], color="#2b6b57", vmin=0
+            subset=["avg_cost"], color=JADE_LO, vmin=0
         ),
         width="stretch",
     )
@@ -218,7 +281,7 @@ if by_kind:
 
     kdf = pd.DataFrame(by_kind, columns=["kind", "steps", "cost_usd", "wall_ms"]).set_index("kind")
     left.caption("by step kind")
-    left.bar_chart(kdf["cost_usd"], height=220)
+    left.bar_chart(kdf["cost_usd"], height=230, color=JADE_LO)
     left.dataframe(kdf.style.format({"cost_usd": "${:.4f}", "wall_ms": "{:,.0f}"}), width="stretch")
 
 by_tool = q(
@@ -230,7 +293,7 @@ if by_tool:
 
     tdf = pd.DataFrame(by_tool, columns=["tool", "calls", "wall_ms"]).set_index("tool")
     right.caption("tool calls (tools are free — the cost they drive is the context they return)")
-    right.bar_chart(tdf["calls"], height=220)
+    right.bar_chart(tdf["calls"], height=230, color=BRONZE)
     right.dataframe(tdf, width="stretch")
 else:
     right.info(
