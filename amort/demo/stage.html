@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>amortize · stage</title>
+<style>
+  :root {
+    --bg: #0a0c10; --panel: #12151c; --line: #232833;
+    --fg: #e8ebf0; --dim: #6b7484;
+    --accent: #34d399; --bad: #f87171; --warn: #fbbf24; --blue: #60a5fa;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg); color: var(--fg); overflow: hidden;
+    font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+  }
+  #wrap { display: flex; flex-direction: column; height: 100%; padding: 2.2vh 2.5vw; gap: 1.6vh; }
+  header { display: flex; justify-content: space-between; align-items: baseline; }
+  header h1 { font-size: 2.6vh; font-weight: 600; letter-spacing: .18em; }
+  header h1 span { color: var(--accent); }
+  #meta { color: var(--dim); font-size: 1.7vh; }
+  #simbadge { display: none; color: var(--warn); border: 1px solid var(--warn);
+    padding: .3vh 1vw; border-radius: .5vh; font-size: 1.7vh; letter-spacing: .12em; }
+  #lanes { flex: 1; display: flex; gap: 2vw; min-height: 0; }
+  .lane { flex: 1; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 1.2vh; padding: 2.4vh 2vw; display: flex; flex-direction: column; gap: 1.6vh; }
+  .lane h2 { font-size: 2.2vh; letter-spacing: .22em; color: var(--dim); font-weight: 600; }
+  .lane.active { border-color: var(--blue); box-shadow: 0 0 3vh rgba(96,165,250,.12); }
+  .lane[data-lane="amortize"] h2 { color: var(--accent); }
+  .meters { display: flex; gap: 2vw; align-items: baseline; }
+  .meter .num { font-size: 7.2vh; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.05; }
+  .meter .lbl { color: var(--dim); font-size: 1.6vh; letter-spacing: .14em; }
+  .clock { font-size: 2.6vh; color: var(--dim); font-variant-numeric: tabular-nums; }
+  .clock.running { color: var(--blue); }
+  .cells { display: flex; flex-direction: column; gap: .8vh; margin-top: auto; }
+  .cellrow { display: flex; justify-content: space-between; font-size: 2vh;
+    color: var(--dim); border-top: 1px solid var(--line); padding-top: .8vh; }
+  .cellrow .val { color: var(--fg); font-variant-numeric: tabular-nums; }
+  .cellrow .val .parity { color: var(--accent); }
+  .cellrow .val .parity.bad { color: var(--bad); }
+  .ticker { height: 2.2vh; color: var(--dim); font-size: 1.7vh; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; }
+  .ticker b { color: var(--fg); font-weight: 500; }
+  #overlay { position: fixed; inset: 0; background: rgba(10,12,16,.96); display: none;
+    flex-direction: column; align-items: center; justify-content: center; gap: 2.5vh; z-index: 9; }
+  #overlay.show { display: flex; }
+  #bignum { font-size: 22vh; font-weight: 800; letter-spacing: -.02em;
+    font-variant-numeric: tabular-nums; color: var(--accent); }
+  #bignum.pos { color: var(--bad); }
+  #bignum.zero { color: var(--dim); }
+  #bigsub { font-size: 3.4vh; color: var(--fg); }
+  #bigsim { font-size: 2vh; color: var(--warn); letter-spacing: .14em; display: none; }
+  #bignote { font-size: 1.8vh; color: var(--dim); }
+  #conn { position: fixed; bottom: 1.2vh; right: 1.5vw; font-size: 1.5vh; color: var(--dim); }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <header>
+    <h1>AMORT<span>IZE</span></h1>
+    <div id="simbadge">SIMULATED — estimated tokens, labelled end-to-end</div>
+    <div id="meta">waiting for a run…</div>
+  </header>
+  <div id="lanes">
+    <section class="lane" data-lane="baseline">
+      <h2>DIRECT</h2>
+      <div class="meters">
+        <div class="meter"><div class="num" data-m="tok">0</div><div class="lbl">TOKENS</div></div>
+        <div class="meter"><div class="num" data-m="usd">$0.0000</div><div class="lbl">COST</div></div>
+      </div>
+      <div class="clock" data-m="clock">0.0s</div>
+      <div class="ticker" data-m="ticker"></div>
+      <div class="cells">
+        <div class="cellrow" data-row="cold"><span>first request</span><span class="val">—</span></div>
+        <div class="cellrow" data-row="warm"><span>re-prompt</span><span class="val">—</span></div>
+      </div>
+    </section>
+    <section class="lane" data-lane="amortize">
+      <h2>THROUGH AMORTIZE</h2>
+      <div class="meters">
+        <div class="meter"><div class="num" data-m="tok">0</div><div class="lbl">TOKENS</div></div>
+        <div class="meter"><div class="num" data-m="usd">$0.0000</div><div class="lbl">COST</div></div>
+      </div>
+      <div class="clock" data-m="clock">0.0s</div>
+      <div class="ticker" data-m="ticker"></div>
+      <div class="cells">
+        <div class="cellrow" data-row="cold"><span>first request</span><span class="val">—</span></div>
+        <div class="cellrow" data-row="warm"><span>re-prompt</span><span class="val">—</span></div>
+      </div>
+    </section>
+  </div>
+</div>
+<div id="overlay">
+  <div id="bignum">0%</div>
+  <div id="bigsub"></div>
+  <div id="bigsim">SIMULATED NUMBERS</div>
+  <div id="bignote">re-prompt, through Amortize vs direct · measured from the ledger, never asserted</div>
+</div>
+<div id="conn">connecting…</div>
+<script>
+(function () {
+  "use strict";
+  var lanes = {};
+  document.querySelectorAll(".lane").forEach(function (el) {
+    lanes[el.dataset.lane] = {
+      el: el,
+      tok: el.querySelector('[data-m="tok"]'),
+      usd: el.querySelector('[data-m="usd"]'),
+      clock: el.querySelector('[data-m="clock"]'),
+      ticker: el.querySelector('[data-m="ticker"]'),
+      rows: { cold: el.querySelector('[data-row="cold"] .val'),
+              warm: el.querySelector('[data-row="warm"] .val') },
+      totTok: 0, totUsd: 0, shownTok: 0, shownUsd: 0,
+      clockStart: null, clockMs: 0
+    };
+  });
+  var parityByMode = {};   // mode -> symbol markup, stamped onto the warm row
+
+  function fmtTok(n) { return Math.round(n).toLocaleString("en-US"); }
+  function fmtUsd(n) { return "$" + n.toFixed(4); }
+  function fmtS(ms) { return (ms / 1000).toFixed(1) + "s"; }
+
+  // meter tween + stopwatch tick
+  setInterval(function () {
+    Object.keys(lanes).forEach(function (k) {
+      var L = lanes[k];
+      L.shownTok += (L.totTok - L.shownTok) * 0.14;
+      L.shownUsd += (L.totUsd - L.shownUsd) * 0.14;
+      if (Math.abs(L.totTok - L.shownTok) < 1) L.shownTok = L.totTok;
+      L.tok.textContent = fmtTok(L.shownTok);
+      L.usd.textContent = fmtUsd(L.shownUsd);
+      if (L.clockStart !== null) {
+        L.clock.textContent = fmtS(performance.now() - L.clockStart);
+      }
+    });
+  }, 50);
+
+  function onEvent(ev) {
+    var L = ev.lane ? lanes[ev.lane] : null;
+    if (ev.type === "run_start" && L) {
+      document.getElementById("meta").textContent =
+        (ev.task || "") + " · " + (ev.model || "") + (ev.replayed ? " · REPLAY of a recorded run" : "");
+      if (ev.simulated) document.getElementById("simbadge").style.display = "block";
+      L.el.classList.add("active");
+      L.clock.classList.add("running");
+      L.clockStart = performance.now();
+      L.ticker.innerHTML = "<b>" + ev.mode + "</b> run started…";
+    } else if (ev.type === "step" && L) {
+      var bits = "<b>" + ev.kind + "</b> " + (ev.name || "");
+      if (typeof ev.tokens === "number") {
+        L.totTok += ev.tokens; L.totUsd += (ev.cost_usd || 0);
+        bits += " · +" + fmtTok(ev.tokens) + " tok";
+      }
+      L.ticker.innerHTML = bits;
+    } else if (ev.type === "run_end" && L) {
+      // trust the measured totals over any per-step accumulation
+      if (typeof ev.tokens === "number") {
+        var priorTok = L.cellTok || {};
+        priorTok[ev.mode] = ev.tokens;
+        L.cellTok = priorTok;
+        L.totTok = Object.values(priorTok).reduce(function (a, b) { return a + b; }, 0);
+      }
+      if (typeof ev.cost_usd === "number") {
+        var priorUsd = L.cellUsd || {};
+        priorUsd[ev.mode] = ev.cost_usd;
+        L.cellUsd = priorUsd;
+        L.totUsd = Object.values(priorUsd).reduce(function (a, b) { return a + b; }, 0);
+      }
+      L.el.classList.remove("active");
+      L.clock.classList.remove("running");
+      L.clockStart = null;
+      L.clock.textContent = fmtS(ev.wall_ms || 0);
+      L.ticker.innerHTML = ev.ok === false ? "<b>run failed</b>" : "done";
+      var row = L.rows[ev.mode];
+      if (row) {
+        row.textContent = fmtTok(ev.tokens || 0) + " tok · " + fmtUsd(ev.cost_usd || 0) +
+          " · " + fmtS(ev.wall_ms || 0);
+        if (parityByMode[ev.mode] && ev.lane === "amortize") {
+          row.innerHTML += parityByMode[ev.mode];
+        }
+      }
+    } else if (ev.type === "parity") {
+      var mode = ev.key && ev.key.indexOf("warm") >= 0 ? "warm" : "cold";
+      var cls = ev.verdict === "match" ? "parity" : "parity bad";
+      var mark = ' <span class="' + cls + '">parity ' + (ev.symbol || "n/a") + "</span>";
+      parityByMode[mode] = mark;
+      var target = lanes.amortize && lanes.amortize.rows[mode];
+      if (target && target.textContent !== "—") target.innerHTML += mark;
+    } else if (ev.type === "final") {
+      showFinal(ev);
+    }
+  }
+
+  function showFinal(ev) {
+    var d = ev.deltas || {};
+    var pct = (d.warm_tokens_pct !== null && d.warm_tokens_pct !== undefined)
+      ? d.warm_tokens_pct : d.cold_tokens_pct;
+    var num = document.getElementById("bignum");
+    var sub = document.getElementById("bigsub");
+    if (pct === null || pct === undefined) {
+      num.textContent = "n/a"; num.className = "zero";
+      sub.textContent = "no comparable runs recorded";
+    } else {
+      var r = Math.round(pct);
+      num.textContent = (r > 0 ? "+" : (r < 0 ? "−" : "")) + Math.abs(r) + "%";
+      num.className = r > 0 ? "pos" : (r === 0 ? "zero" : "");
+      sub.textContent =
+        ev.parity === "match" ? "output verified identical" :
+        ev.parity === "mismatch" ? "output DIFFERS — parity failed" :
+        "parity n/a — no warm replay happened";
+    }
+    document.getElementById("bigsim").style.display = ev.simulated ? "block" : "none";
+    document.getElementById("overlay").className = "show";
+  }
+
+  var conn = document.getElementById("conn");
+  var es = new EventSource("/events");
+  es.onopen = function () { conn.textContent = "live"; };
+  es.onerror = function () { conn.textContent = "reconnecting…"; };
+  es.onmessage = function (msg) {
+    try { onEvent(JSON.parse(msg.data)); } catch (e) { /* ignore malformed */ }
+  };
+  // click anywhere to dismiss / restore the final overlay
+  document.getElementById("overlay").addEventListener("click", function () {
+    this.className = "";
+  });
+})();
+</script>
+</body>
+</html>
