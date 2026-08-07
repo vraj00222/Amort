@@ -515,18 +515,31 @@ def run_offline(
     are estimated (`CHARS_PER_TOKEN`), and the recorder tags the run
     `simulated=True` so no downstream surface can present these as measured.
 
-    `lighten` is the Layer-1 switch. It is **wired but inert today** — passing
-    True changes nothing, which is why the demo's two columns come out equal.
-    TODO(layer1): when tool dieting exists, this is where the offline lane
-    reflects it, by charging for stubs instead of the full catalogue.
+    `lighten` is the Layer-1 switch: when Workstream A's stub builder is
+    present, llm turns are charged for the stub catalogue (one synthetic
+    `search_tools` tool) instead of the full TOOLS payload. Until it merges,
+    the full catalogue is charged and the llm steps say so in `meta`.
     """
     rec = recorder or RunRecorder(
         lane=lane, mode=mode, system=SYSTEM, user_msg=TASK_PROMPT,
         tool_names=TOOL_NAMES, model=model, simulated=True,
     )
 
-    # TODO(layer1): `lighten=True` will send compact stubs instead of TOOLS here.
     tool_payload: Any = TOOLS
+    lighten_note: str | None = None
+    if lighten:
+        try:
+            from amort.proxy.lighten import build_stub_tool
+
+            tool_payload = [build_stub_tool(TOOLS_OPENAI)]
+        except ImportError:
+            lighten_note = (
+                "lighten requested but amort.proxy.lighten is not merged yet — "
+                "charged the full catalogue"
+            )
+    llm_meta: dict[str, Any] = {"simulated": True, "lighten": lighten and not lighten_note}
+    if lighten_note:
+        llm_meta["lighten_note"] = lighten_note
     messages: list[dict[str, Any]] = [{"role": "user", "content": TASK_PROMPT}]
 
     def llm_turn(output_payload: Any) -> None:
@@ -542,13 +555,13 @@ def run_offline(
             output_tokens=output_tokens,
             cost_usd=cost_usd(model, input_tokens, output_tokens),
             wall_ms=wall_ms,
-            meta={"simulated": True},
+            meta=dict(llm_meta),
         )
         emit(StepEvent(
             run_id=rec.run_id, lane=rec.lane, mode=rec.mode,
             task_fingerprint=rec.task_fingerprint, step_idx=step.step_idx, kind="llm",
             name=model, model=model, input_tokens=input_tokens, output_tokens=output_tokens,
-            cost_usd=step.cost_usd, wall_ms=wall_ms, meta={"simulated": True, "task": TASK_NAME},
+            cost_usd=step.cost_usd, wall_ms=wall_ms, meta={**llm_meta, "task": TASK_NAME},
         ))
 
     def tool_turn(name: str, args: dict[str, Any]) -> Any:

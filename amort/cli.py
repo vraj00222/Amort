@@ -50,15 +50,25 @@ def up(
 
     from amort.ledger.events import active_backend
 
+    base = f"http://{bind_host}:{bind_port}"
     console.print()
     console.print("[bold]amortize[/bold] — proxy up", style="cyan")
-    console.print(f"  listening    [bold]http://{bind_host}:{bind_port}[/bold]")
-    console.print(f"  upstream     {settings.amort_upstream_anthropic}")
+    console.print(f"  listening    [bold]{base}[/bold]")
+    console.print(f"  upstream     anthropic → {settings.amort_upstream_anthropic}")
+    console.print(f"               openai    → {settings.amort_upstream_openai}")
     console.print(f"  ledger       {active_backend()}")
     console.print(f"  memory       {settings.memory_dir}")
     console.print()
-    console.print("  Point any client at it with one env var:")
-    console.print(f"    [dim]export ANTHROPIC_BASE_URL=http://{bind_host}:{bind_port}[/dim]")
+    console.print("  Connect any Anthropic client (incl. Claude Code) — paste:")
+    console.print(f"    [bold]export ANTHROPIC_BASE_URL={base}[/bold]")
+    console.print("    [bold]export ANTHROPIC_AUTH_TOKEN=<your key>[/bold]")
+    console.print("  OpenAI-compatible clients:")
+    console.print(f"    [bold]base_url {base}/v1[/bold]  (api_key = your upstream key)")
+    console.print("  Or make it stick in ~/.claude/settings.json:")
+    console.print(
+        f'    [dim]{{"env": {{"ANTHROPIC_BASE_URL": "{base}", '
+        '"ANTHROPIC_AUTH_TOKEN": "<your key>"}}}}[/dim]'
+    )
     console.print()
 
     uvicorn.run(
@@ -78,11 +88,47 @@ def demo(
     live: Annotated[
         bool, typer.Option("--live/--offline", help="Call the real API, or replay mock tools only.")
     ] = True,
+    stage: Annotated[
+        bool, typer.Option("--stage", help="Serve the projector stage view during the run.")
+    ] = False,
+    stage_port: Annotated[int, typer.Option(help="Port for the stage view.")] = 4700,
+    replay: Annotated[
+        str, typer.Option("--replay", help="Replay a recorded demo_report.json on the stage instead of running.")
+    ] = "",
 ) -> None:
     """Run the side-by-side comparison harness (demo-only; not the request path)."""
     from amort.demo.harness import run_demo
 
+    if replay:
+        from amort.demo.stage import replay_report, start_stage
+
+        url = start_stage(stage_port)
+        console.print(f"\n[bold cyan]  STAGE → {url}  [/bold cyan] (replaying {replay})\n")
+        events = replay_report(replay)
+        console.print(f"[dim]replayed {events} recorded events — stage stays up, Ctrl+C to exit[/dim]")
+        _serve_forever()
+        return
+
+    if stage:
+        from amort.demo.stage import start_stage
+
+        url = start_stage(stage_port)
+        console.print(f"\n[bold cyan]  STAGE → {url}  [/bold cyan] (open on the projector)\n")
+
     run_demo(task=task, lanes=lanes, repeat=repeat, live=live)
+
+    if stage:
+        console.print("[dim]stage stays up — Ctrl+C to exit[/dim]")
+        _serve_forever()
+
+
+def _serve_forever() -> None:
+    """Keep the stage's daemon thread alive until Ctrl+C."""
+    import contextlib
+    import threading
+
+    with contextlib.suppress(KeyboardInterrupt):
+        threading.Event().wait()
 
 
 @app.command()
@@ -111,6 +157,41 @@ def stats(
         )
     console.print(table)
 
+    # Per-task rollup. The task name lives in STEPS meta ({"task": ...}), whose
+    # JSON accessor syntax differs between SQLite and Snowflake — so parse in
+    # Python instead of maintaining two dialects.
+    # ponytail: full STEPS scan; fine at demo scale, push into SQL if it grows.
+    import json as _json
+
+    step_rows = writer.query(
+        "SELECT META, KIND, INPUT_TOKENS, OUTPUT_TOKENS, COST_USD, RUN_ID FROM STEPS"
+    )
+    per_task: dict[str, dict[str, object]] = {}
+    for meta_raw, kind, tin, tout, cost, run_id in step_rows:
+        try:
+            meta = meta_raw if isinstance(meta_raw, dict) else _json.loads(meta_raw or "{}")
+        except (TypeError, ValueError):
+            meta = {}
+        agg = per_task.setdefault(
+            str(meta.get("task") or "(untagged)"),
+            {"runs": set(), "llm": 0, "tool": 0, "tokens": 0, "cost": 0.0},
+        )
+        agg["runs"].add(run_id)  # type: ignore[union-attr]
+        if kind in ("llm", "tool"):
+            agg[kind] = int(agg[kind]) + 1  # type: ignore[arg-type]
+        agg["tokens"] = int(agg["tokens"]) + int(tin or 0) + int(tout or 0)  # type: ignore[arg-type]
+        agg["cost"] = float(agg["cost"]) + float(cost or 0.0)  # type: ignore[arg-type]
+    if per_task:
+        t = Table(title="by task (from STEPS meta)", header_style="bold")
+        for col in ("task", "runs", "llm steps", "tool steps", "tokens", "cost $"):
+            t.add_column(col, overflow="fold")
+        for name, agg in sorted(per_task.items()):
+            t.add_row(
+                name, str(len(agg["runs"])), f"{agg['llm']:,}", f"{agg['tool']:,}",  # type: ignore[arg-type]
+                f"{agg['tokens']:,}", f"{float(agg['cost']):.4f}",  # type: ignore[arg-type]
+            )
+        console.print(t)
+
     savings = writer.query("SELECT * FROM SAVINGS")
     if savings:
         s = Table(title="SAVINGS view", header_style="bold")
@@ -130,24 +211,53 @@ def stats(
             f"[yellow]note:[/yellow] {len(unfamiliar)} model(s) had no published rate and were "
             f"costed at $0.00: {', '.join(unfamiliar)}"
         )
+    console.print(f"[dim]ledger backend: {writer.name}[/dim]")
 
 
-@app.command()
-def skills() -> None:
+skills_app = typer.Typer(help="Compiled skills (the markdown store is the source of truth).")
+app.add_typer(skills_app, name="skills")
+
+
+def _skill_front(md_path: str | None) -> dict:
+    """Frontmatter of a skill's markdown — where `version`/`runs_observed` live."""
+    if not md_path:
+        return {}
+    from pathlib import Path
+
+    from amort.skills.store_everos import _split_markdown
+
+    try:
+        front, _ = _split_markdown(Path(md_path).read_text(encoding="utf-8"))
+        return front
+    except Exception:  # noqa: BLE001 — a bad file must not kill the listing
+        return {}
+
+
+@skills_app.callback(invoke_without_command=True)
+def skills_default(ctx: typer.Context) -> None:
+    """`amort skills` with no subcommand behaves like `amort skills list`."""
+    if ctx.invoked_subcommand is None:
+        skills_list()
+
+
+@skills_app.command("list")
+def skills_list() -> None:
     """List compiled skills and their promotion status."""
     from amort.skills.store_everos import get_store
 
     store = get_store()
     table = Table(title=f"amortize skills — memory: {store.backend_name}", header_style="bold")
-    for col in ("skill_id", "name", "status", "fingerprint", "tools", "parity", "path"):
+    for col in ("skill_id", "name", "status", "version", "runs", "parity", "tools", "path"):
         table.add_column(col, overflow="fold")
 
     found = store.local.iter_skills()
     for sk in found:
+        front = _skill_front(sk.md_path)
         table.add_row(
-            sk.skill_id, sk.name, sk.status, sk.task_fingerprint[:14],
-            ", ".join(sk.tools_required)[:40],
+            sk.skill_id, sk.name, sk.status,
+            str(front.get("version") or "-"), str(front.get("runs_observed") or "-"),
             "n/a" if sk.parity_rate is None else f"{sk.parity_rate:.0%}",
+            ", ".join(sk.tools_required)[:40],
             str(sk.md_path or "-").replace(str(store.settings.memory_dir), "…"),
         )
     console.print(table)
@@ -156,6 +266,39 @@ def skills() -> None:
             "[dim]No skills yet. Layer 2 (distil → replay) is a stub in this build — "
             "`amort demo` records Cases, but nothing compiles them into Skills.[/dim]"
         )
+
+
+@skills_app.command("show")
+def skills_show(skill_id: str) -> None:
+    """Show one skill: status, parity, version, tools, and the full markdown."""
+    from rich.markdown import Markdown
+    from rich.panel import Panel
+
+    from amort.skills.store_everos import get_store
+
+    store = get_store()
+    sk = store.local.load_skill(skill_id)
+    if sk is None:
+        console.print(f"[red]no skill with id {skill_id!r}[/red] — try `amort skills list`")
+        raise typer.Exit(1)
+
+    front = _skill_front(sk.md_path)
+    head = "\n".join(
+        f"[bold]{key}[/bold]: {value}"
+        for key, value in (
+            ("skill_id", sk.skill_id),
+            ("name", sk.name),
+            ("status", sk.status),
+            ("version", front.get("version") or "-"),
+            ("runs_observed", front.get("runs_observed") or "-"),
+            ("parity_rate", "n/a" if sk.parity_rate is None else f"{sk.parity_rate:.0%}"),
+            ("tools_required", ", ".join(sk.tools_required) or "-"),
+            ("fingerprint", sk.task_fingerprint or "-"),
+            ("path", sk.md_path or "-"),
+        )
+    )
+    console.print(Panel(head, title=sk.skill_id, title_align="left", border_style="cyan"))
+    console.print(Markdown(sk.body))
 
 
 @app.command()
@@ -244,10 +387,21 @@ def doctor() -> None:
 
     table.add_row("config", "[green]ok[/green]", f"port {settings.amort_port}, ledger={settings.amort_ledger}")
     table.add_row(
-        "anthropic key",
-        "[green]set[/green]" if settings.anthropic_api_key else "[yellow]unset[/yellow]",
-        "clients may still send their own key" if not settings.anthropic_api_key else "fallback available",
+        "novita key",
+        "[green]set[/green]" if settings.novita_api_key else "[yellow]unset[/yellow]",
+        "live demo runs enabled" if settings.novita_api_key
+        else "demo falls back to offline (simulated numbers)",
     )
+    novita_models = f"{settings.novita_api_url.rstrip('/')}/v1/models"
+    try:
+        headers = (
+            {"Authorization": f"Bearer {settings.novita_api_key}"}
+            if settings.novita_api_key else {}
+        )
+        code = httpx.get(novita_models, timeout=5, headers=headers).status_code
+        table.add_row("novita api", "[green]reachable[/green]", f"HTTP {code} from {novita_models}")
+    except Exception as exc:  # noqa: BLE001
+        table.add_row("novita api", "[red]unreachable[/red]", str(exc)[:80])
     backend = active_backend()
     table.add_row(
         "ledger",
@@ -262,9 +416,12 @@ def doctor() -> None:
     )
     try:
         code = httpx.get(f"{settings.amort_upstream_anthropic}/v1/models", timeout=5).status_code
-        table.add_row("upstream", "[green]reachable[/green]", f"HTTP {code} from {settings.amort_upstream_anthropic}")
+        table.add_row(
+            "upstream (anthropic)", "[green]reachable[/green]",
+            f"HTTP {code} from {settings.amort_upstream_anthropic}",
+        )
     except Exception as exc:  # noqa: BLE001
-        table.add_row("upstream", "[red]unreachable[/red]", str(exc)[:80])
+        table.add_row("upstream (anthropic)", "[red]unreachable[/red]", str(exc)[:80])
     try:
         proxy_health = httpx.get(f"{settings.proxy_base_url}/health", timeout=2).json()
         table.add_row("proxy", "[green]running[/green]", str(proxy_health)[:80])
