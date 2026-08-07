@@ -30,6 +30,31 @@ from amort.ledger.pricing import pricing_note, unknown_models
 
 st.set_page_config(page_title="amortize", page_icon="📉", layout="wide")
 
+# Inline only — CONTRACTS.md forbids CDN assets, and a dashboard that needs the
+# network to look right is a dashboard that breaks at a booth on venue wifi.
+# Lane colours match the stage view (`stage.html`) so the two screens read as one
+# system: grey = direct/baseline, green = through Amortize.
+LANE_BASELINE = "#5b6b85"
+LANE_AMORTIZE = "#34d399"
+
+st.markdown(
+    """
+    <style>
+      .block-container { padding-top: 2.4rem; max-width: 1500px; }
+      h1 { letter-spacing: .04em; font-weight: 700; }
+      [data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; font-size: 1.9rem; }
+      [data-testid="stMetricLabel"] { letter-spacing: .12em; text-transform: uppercase;
+                                      font-size: .74rem; opacity: .72; }
+      [data-testid="stMetric"] { padding: .5rem .9rem; border-radius: .6rem;
+                                 background: rgba(255,255,255,.025); }
+      div[data-testid="stDataFrame"] { font-variant-numeric: tabular-nums; }
+      .stCaption, [data-testid="stCaptionContainer"] { opacity: .78; }
+      hr { margin: 1.6rem 0; }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 
 @st.cache_resource
 def _writer() -> Any:
@@ -57,10 +82,34 @@ totals = q(
 )
 n_runs, n_tokens, total_cost, total_wall = totals[0] if totals else (0, 0, 0.0, 0)
 
+# Per-lane averages, so the headline tile compares like with like: a lane that
+# simply ran more times would otherwise look more expensive.
+lane_avg = q(
+    "SELECT LANE, COUNT(*), AVG(COST_USD), AVG(INPUT_TOKENS + OUTPUT_TOKENS) "
+    "FROM RUNS GROUP BY LANE"
+)
+_avg = {str(r[0]): (int(r[1] or 0), float(r[2] or 0.0), float(r[3] or 0.0)) for r in lane_avg}
+_base, _amort = _avg.get("baseline"), _avg.get("amortize")
+
 c1, c2, c3, c4, c5 = st.columns(5)
 c1.metric("runs", f"{n_runs:,}")
 c2.metric("tokens", f"{int(n_tokens):,}")
-c3.metric("spend", f"${float(total_cost):,.4f}")
+if _base and _amort and _base[1] > 0:
+    # Measured average against measured average — the same arithmetic the demo
+    # harness prints. Streamlit renders a negative delta green by default, which
+    # is backwards for a cost, so inverse=True flips it.
+    delta_pct = (_amort[1] - _base[1]) / _base[1] * 100
+    c3.metric(
+        "avg cost / run · amortize",
+        f"${_amort[1]:,.4f}",
+        delta=f"{delta_pct:+.1f}% vs direct",
+        delta_color="inverse",
+        help=f"direct averages ${_base[1]:,.4f} over {_base[0]:,} run(s); "
+             f"amortize ${_amort[1]:,.4f} over {_amort[0]:,}.",
+    )
+else:
+    c3.metric("spend", f"${float(total_cost):,.4f}",
+              help="Only one lane has runs, so there is nothing to compare it against.")
 c4.metric("ledger", writer.name)
 c5.metric("memory", str(settings.memory_dir.name))
 
@@ -107,13 +156,25 @@ if rows:
 
     metric = st.radio("plot", ["cost_usd", "tokens"], horizontal=True, label_visibility="collapsed")
     pivot = df.pivot_table(index="n", columns="lane_mode", values=metric, aggfunc="mean")
-    st.line_chart(pivot, height=280)
+
+    # Colour by lane, not by arbitrary series order, so "green is cheaper" holds
+    # from the stage view through to here. Warm runs get the same hue as their
+    # cold sibling — the mode is the line style's job, not the colour's.
+    palette = [
+        LANE_AMORTIZE if str(col).startswith("amortize") else LANE_BASELINE
+        for col in pivot.columns
+    ]
+    st.line_chart(pivot, height=300, color=palette)
 
     lanes = df.groupby("lane_mode").agg(
         runs=("run_id", "count"), avg_cost=("cost_usd", "mean"), avg_tokens=("tokens", "mean")
     )
-    st.dataframe(lanes.style.format({"avg_cost": "${:.4f}", "avg_tokens": "{:,.0f}"}),
-                 width="stretch")
+    st.dataframe(
+        lanes.style.format({"avg_cost": "${:.4f}", "avg_tokens": "{:,.0f}"}).bar(
+            subset=["avg_cost"], color="#2b6b57", vmin=0
+        ),
+        width="stretch",
+    )
 
 # ── 2. cumulative saved ──────────────────────────────────────────────────────
 st.subheader("Cumulative $ saved")
@@ -140,7 +201,12 @@ if savings:
         width="stretch",
     )
 else:
-    st.caption("The SAVINGS view is empty — no runs have been grouped by fingerprint yet.")
+    st.info(
+        "**The SAVINGS view has no rows yet.** It groups runs by `TASK_FINGERPRINT`, so it fills "
+        "in as soon as any task has been run — `amort demo --offline` is enough. Nothing is wrong; "
+        "there is simply nothing to average.",
+        icon="📭",
+    )
 
 # ── 3. where the money goes ──────────────────────────────────────────────────
 st.subheader("Cost by step")
@@ -167,7 +233,11 @@ if by_tool:
     right.bar_chart(tdf["calls"], height=220)
     right.dataframe(tdf, width="stretch")
 else:
-    right.caption("No tool steps recorded yet.")
+    right.info(
+        "**No tool steps recorded.** Only LLM calls have been logged so far — either no agent "
+        "run has happened yet, or the runs that did happen never called a tool.",
+        icon="🔧",
+    )
 
 # ── 4. skills ────────────────────────────────────────────────────────────────
 st.subheader("Skills")

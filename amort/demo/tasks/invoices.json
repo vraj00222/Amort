@@ -1,0 +1,636 @@
+{
+  "_meta": {
+    "generated_by": "scripts-local/gen_invoices.py",
+    "seed": 20260807,
+    "as_of": "2026-08-07T00:00:00Z",
+    "note": "Deterministic. Every tool in invoice_reconcile.py is a pure function of this file."
+  },
+  "customers": {
+    "ACME-001": {
+      "name": "Acme Robotics",
+      "terms_days": 30,
+      "currency": "USD",
+      "tolerance_cents": 100,
+      "tier": "enterprise"
+    },
+    "BOLT-002": {
+      "name": "Boltway Logistics",
+      "terms_days": 45,
+      "currency": "USD",
+      "tolerance_cents": 500,
+      "tier": "enterprise"
+    },
+    "CIRR-003": {
+      "name": "Cirrus Media",
+      "terms_days": 14,
+      "currency": "USD",
+      "tolerance_cents": 0,
+      "tier": "team"
+    },
+    "DELT-004": {
+      "name": "Delta Foodworks",
+      "terms_days": 30,
+      "currency": "USD",
+      "tolerance_cents": 50,
+      "tier": "team"
+    },
+    "EAST-005": {
+      "name": "Eastgate Clinic",
+      "terms_days": 60,
+      "currency": "USD",
+      "tolerance_cents": 0,
+      "tier": "smb"
+    },
+    "FRAY-006": {
+      "name": "Frayed Knot Sails",
+      "terms_days": 14,
+      "currency": "USD",
+      "tolerance_cents": 0,
+      "tier": "smb"
+    }
+  },
+  "invoices": [
+    {
+      "invoice_id": "INV-2001",
+      "customer_id": "ACME-001",
+      "issued_at": "2026-07-01T09:00:00Z",
+      "due_at": "2026-08-01T09:00:00Z",
+      "amount_cents": 99800,
+      "currency": "USD",
+      "po_number": "PO-7100",
+      "line_count": 6,
+      "status": "open"
+    },
+    {
+      "invoice_id": "INV-2002",
+      "customer_id": "BOLT-002",
+      "issued_at": "2026-07-02T09:00:00Z",
+      "due_at": "2026-08-02T09:00:00Z",
+      "amount_cents": 637475,
+      "currency": "USD",
+      "po_number": null,
+      "line_count": 8,
+      "status": "open"
+    },
+    {
+      "invoice_id": "INV-2003",
+      "customer_id": "CIRR-003",
+      "issued_at": "2026-07-03T09:00:00Z",
+      "due_at": "2026-08-03T09:00:00Z",
+      "amount_cents": 139375,
+      "currency": "USD",
+      "po_number": null,
+      "line_count": 6,
+      "status": "open"
+    },
+    {
+      "invoice_id": "INV-2004",
+      "customer_id": "DELT-004",
+      "issued_at": "2026-07-04T09:00:00Z",
+      "due_at": "2026-08-04T09:00:00Z",
+      "amount_cents": 752725,
+      "currency": "USD",
+      "po_number": "PO-7109",
+      "line_count": 8,
+      "status": "open"
+    },
+    {
+      "invoice_id": "INV-2005",
+      "customer_id": "EAST-005",
+      "issued_at": "2026-07-05T09:00:00Z",
+      "due_at": "2026-08-05T09:00:00Z",
+      "amount_cents": 518875,
+      "currency": "USD",
+      "po_number": null,
+      "line_count": 8,
+      "status": "open"
+    },
+    {
+      "invoice_id": "INV-2006",
+      "customer_id": "FRAY-006",
+      "issued_at": "2026-07-06T09:00:00Z",
+      "due_at": "2026-08-06T09:00:00Z",
+      "amount_cents": 642175,
+      "currency": "USD",
+      "po_number": null,
+      "line_count": 2,
+      "status": "open"
+    },
+    {
+      "invoice_id": "INV-2007",
+      "customer_id": "ACME-001",
+      "issued_at": "2026-07-07T09:00:00Z",
+      "due_at": "2026-08-07T09:00:00Z",
+      "amount_cents": 183375,
+      "currency": "USD",
+      "po_number": "PO-7118",
+      "line_count": 1,
+      "status": "open"
+    },
+    {
+      "invoice_id": "INV-2008",
+      "customer_id": "BOLT-002",
+      "issued_at": "2026-07-08T09:00:00Z",
+      "due_at": "2026-08-08T09:00:00Z",
+      "amount_cents": 925350,
+      "currency": "USD",
+      "po_number": null,
+      "line_count": 4,
+      "status": "open"
+    },
+    {
+      "invoice_id": "INV-2009",
+      "customer_id": "CIRR-003",
+      "issued_at": "2026-07-09T09:00:00Z",
+      "due_at": "2026-08-09T09:00:00Z",
+      "amount_cents": 926900,
+      "currency": "USD",
+      "po_number": null,
+      "line_count": 3,
+      "status": "open"
+    },
+    {
+      "invoice_id": "INV-2010",
+      "customer_id": "DELT-004",
+      "issued_at": "2026-07-10T09:00:00Z",
+      "due_at": "2026-08-10T09:00:00Z",
+      "amount_cents": 193350,
+      "currency": "USD",
+      "po_number": "PO-7127",
+      "line_count": 9,
+      "status": "open"
+    },
+    {
+      "invoice_id": "INV-2011",
+      "customer_id": "EAST-005",
+      "issued_at": "2026-07-11T09:00:00Z",
+      "due_at": "2026-08-11T09:00:00Z",
+      "amount_cents": 742925,
+      "currency": "USD",
+      "po_number": null,
+      "line_count": 9,
+      "status": "open"
+    },
+    {
+      "invoice_id": "INV-2012",
+      "customer_id": "FRAY-006",
+      "issued_at": "2026-07-12T09:00:00Z",
+      "due_at": "2026-08-12T09:00:00Z",
+      "amount_cents": 140875,
+      "currency": "USD",
+      "po_number": null,
+      "line_count": 7,
+      "status": "open"
+    },
+    {
+      "invoice_id": "INV-2013",
+      "customer_id": "ACME-001",
+      "issued_at": "2026-07-13T09:00:00Z",
+      "due_at": "2026-08-13T09:00:00Z",
+      "amount_cents": 963375,
+      "currency": "USD",
+      "po_number": "PO-7136",
+      "line_count": 9,
+      "status": "open"
+    },
+    {
+      "invoice_id": "INV-2014",
+      "customer_id": "BOLT-002",
+      "issued_at": "2026-07-14T09:00:00Z",
+      "due_at": "2026-08-14T09:00:00Z",
+      "amount_cents": 944175,
+      "currency": "USD",
+      "po_number": null,
+      "line_count": 1,
+      "status": "open"
+    },
+    {
+      "invoice_id": "INV-2015",
+      "customer_id": "CIRR-003",
+      "issued_at": "2026-07-15T09:00:00Z",
+      "due_at": "2026-08-15T09:00:00Z",
+      "amount_cents": 721675,
+      "currency": "USD",
+      "po_number": null,
+      "line_count": 2,
+      "status": "open"
+    },
+    {
+      "invoice_id": "INV-2016",
+      "customer_id": "DELT-004",
+      "issued_at": "2026-07-16T09:00:00Z",
+      "due_at": "2026-08-16T09:00:00Z",
+      "amount_cents": 219025,
+      "currency": "USD",
+      "po_number": "PO-7145",
+      "line_count": 9,
+      "status": "open"
+    },
+    {
+      "invoice_id": "INV-2017",
+      "customer_id": "EAST-005",
+      "issued_at": "2026-07-17T09:00:00Z",
+      "due_at": "2026-08-17T09:00:00Z",
+      "amount_cents": 311525,
+      "currency": "USD",
+      "po_number": null,
+      "line_count": 7,
+      "status": "open"
+    },
+    {
+      "invoice_id": "INV-2018",
+      "customer_id": "FRAY-006",
+      "issued_at": "2026-07-18T09:00:00Z",
+      "due_at": "2026-08-18T09:00:00Z",
+      "amount_cents": 305850,
+      "currency": "USD",
+      "po_number": null,
+      "line_count": 6,
+      "status": "open"
+    },
+    {
+      "invoice_id": "INV-2019",
+      "customer_id": "ACME-001",
+      "issued_at": "2026-07-19T09:00:00Z",
+      "due_at": "2026-08-19T09:00:00Z",
+      "amount_cents": 809900,
+      "currency": "USD",
+      "po_number": "PO-7154",
+      "line_count": 2,
+      "status": "open"
+    },
+    {
+      "invoice_id": "INV-2020",
+      "customer_id": "BOLT-002",
+      "issued_at": "2026-07-20T09:00:00Z",
+      "due_at": "2026-08-20T09:00:00Z",
+      "amount_cents": 399025,
+      "currency": "USD",
+      "po_number": null,
+      "line_count": 2,
+      "status": "open"
+    },
+    {
+      "invoice_id": "INV-2021",
+      "customer_id": "CIRR-003",
+      "issued_at": "2026-07-21T09:00:00Z",
+      "due_at": "2026-08-21T09:00:00Z",
+      "amount_cents": 357525,
+      "currency": "USD",
+      "po_number": null,
+      "line_count": 3,
+      "status": "open"
+    },
+    {
+      "invoice_id": "INV-2022",
+      "customer_id": "DELT-004",
+      "issued_at": "2026-07-22T09:00:00Z",
+      "due_at": "2026-08-22T09:00:00Z",
+      "amount_cents": 412000,
+      "currency": "USD",
+      "po_number": "PO-7163",
+      "line_count": 3,
+      "status": "open"
+    },
+    {
+      "invoice_id": "INV-2023",
+      "customer_id": "EAST-005",
+      "issued_at": "2026-07-23T09:00:00Z",
+      "due_at": "2026-08-23T09:00:00Z",
+      "amount_cents": 603125,
+      "currency": "USD",
+      "po_number": null,
+      "line_count": 1,
+      "status": "open"
+    },
+    {
+      "invoice_id": "INV-2024",
+      "customer_id": "FRAY-006",
+      "issued_at": "2026-07-24T09:00:00Z",
+      "due_at": "2026-08-24T09:00:00Z",
+      "amount_cents": 305725,
+      "currency": "USD",
+      "po_number": null,
+      "line_count": 2,
+      "status": "open"
+    },
+    {
+      "invoice_id": "INV-2025",
+      "customer_id": "ACME-001",
+      "issued_at": "2026-07-25T09:00:00Z",
+      "due_at": "2026-08-25T09:00:00Z",
+      "amount_cents": 86650,
+      "currency": "USD",
+      "po_number": "PO-7172",
+      "line_count": 7,
+      "status": "open"
+    },
+    {
+      "invoice_id": "INV-2026",
+      "customer_id": "BOLT-002",
+      "issued_at": "2026-07-26T09:00:00Z",
+      "due_at": "2026-08-26T09:00:00Z",
+      "amount_cents": 935175,
+      "currency": "USD",
+      "po_number": null,
+      "line_count": 1,
+      "status": "open"
+    },
+    {
+      "invoice_id": "INV-2027",
+      "customer_id": "CIRR-003",
+      "issued_at": "2026-07-27T09:00:00Z",
+      "due_at": "2026-08-27T09:00:00Z",
+      "amount_cents": 178675,
+      "currency": "USD",
+      "po_number": null,
+      "line_count": 6,
+      "status": "open"
+    },
+    {
+      "invoice_id": "INV-2028",
+      "customer_id": "DELT-004",
+      "issued_at": "2026-07-28T09:00:00Z",
+      "due_at": "2026-08-01T09:00:00Z",
+      "amount_cents": 490150,
+      "currency": "USD",
+      "po_number": "PO-7181",
+      "line_count": 9,
+      "status": "open"
+    },
+    {
+      "invoice_id": "INV-2029",
+      "customer_id": "EAST-005",
+      "issued_at": "2026-07-01T09:00:00Z",
+      "due_at": "2026-08-02T09:00:00Z",
+      "amount_cents": 427375,
+      "currency": "USD",
+      "po_number": null,
+      "line_count": 7,
+      "status": "open"
+    },
+    {
+      "invoice_id": "INV-2030",
+      "customer_id": "FRAY-006",
+      "issued_at": "2026-07-02T09:00:00Z",
+      "due_at": "2026-08-03T09:00:00Z",
+      "amount_cents": 720025,
+      "currency": "USD",
+      "po_number": null,
+      "line_count": 5,
+      "status": "open"
+    }
+  ],
+  "payments": [
+    {
+      "payment_id": "PAY-9001",
+      "invoice_id": "INV-2001",
+      "customer_id": "ACME-001",
+      "received_at": "2026-08-11T14:30:00Z",
+      "amount_cents": 99775,
+      "currency": "USD",
+      "method": "wire"
+    },
+    {
+      "payment_id": "PAY-9002",
+      "invoice_id": "INV-2002",
+      "customer_id": "BOLT-002",
+      "received_at": "2026-08-12T14:30:00Z",
+      "amount_cents": 637475,
+      "currency": "USD",
+      "method": "card"
+    },
+    {
+      "payment_id": "PAY-9003",
+      "invoice_id": "INV-2003",
+      "customer_id": "CIRR-003",
+      "received_at": "2026-08-13T14:30:00Z",
+      "amount_cents": 129475,
+      "currency": "USD",
+      "method": "ach"
+    },
+    {
+      "payment_id": "PAY-9004",
+      "invoice_id": "INV-2005",
+      "customer_id": "EAST-005",
+      "received_at": "2026-08-14T14:30:00Z",
+      "amount_cents": 518875,
+      "currency": "USD",
+      "method": "wire"
+    },
+    {
+      "payment_id": "PAY-9005",
+      "invoice_id": "INV-2006",
+      "customer_id": "FRAY-006",
+      "received_at": "2026-08-15T14:30:00Z",
+      "amount_cents": 642175,
+      "currency": "USD",
+      "method": "card"
+    },
+    {
+      "payment_id": "PAY-9006",
+      "invoice_id": "INV-2007",
+      "customer_id": "ACME-001",
+      "received_at": "2026-08-16T14:30:00Z",
+      "amount_cents": 192200,
+      "currency": "USD",
+      "method": "ach"
+    },
+    {
+      "payment_id": "PAY-9007",
+      "invoice_id": "INV-2008",
+      "customer_id": "BOLT-002",
+      "received_at": "2026-08-17T14:30:00Z",
+      "amount_cents": 925325,
+      "currency": "USD",
+      "method": "wire"
+    },
+    {
+      "payment_id": "PAY-9008",
+      "invoice_id": "INV-2009",
+      "customer_id": "CIRR-003",
+      "received_at": "2026-08-18T14:30:00Z",
+      "amount_cents": 926900,
+      "currency": "USD",
+      "method": "card"
+    },
+    {
+      "payment_id": "PAY-9009",
+      "invoice_id": "INV-2010",
+      "customer_id": "DELT-004",
+      "received_at": "2026-08-19T14:30:00Z",
+      "amount_cents": 193350,
+      "currency": "USD",
+      "method": "ach"
+    },
+    {
+      "payment_id": "PAY-9010",
+      "invoice_id": "INV-2011",
+      "customer_id": "EAST-005",
+      "received_at": "2026-08-20T14:30:00Z",
+      "amount_cents": 709325,
+      "currency": "USD",
+      "method": "wire"
+    },
+    {
+      "payment_id": "PAY-9011",
+      "invoice_id": "INV-2012",
+      "customer_id": "FRAY-006",
+      "received_at": "2026-08-21T14:30:00Z",
+      "amount_cents": 140875,
+      "currency": "USD",
+      "method": "card"
+    },
+    {
+      "payment_id": "PAY-9012",
+      "invoice_id": "INV-2014",
+      "customer_id": "BOLT-002",
+      "received_at": "2026-08-22T14:30:00Z",
+      "amount_cents": 944175,
+      "currency": "USD",
+      "method": "ach"
+    },
+    {
+      "payment_id": "PAY-9013",
+      "invoice_id": "INV-2015",
+      "customer_id": "CIRR-003",
+      "received_at": "2026-08-23T14:30:00Z",
+      "amount_cents": 735150,
+      "currency": "USD",
+      "method": "wire"
+    },
+    {
+      "payment_id": "PAY-9014",
+      "invoice_id": "INV-2016",
+      "customer_id": "DELT-004",
+      "received_at": "2026-08-24T14:30:00Z",
+      "amount_cents": 219025,
+      "currency": "USD",
+      "method": "card"
+    },
+    {
+      "payment_id": "PAY-9015",
+      "invoice_id": "INV-2017",
+      "customer_id": "EAST-005",
+      "received_at": "2026-08-25T14:30:00Z",
+      "amount_cents": 311525,
+      "currency": "USD",
+      "method": "ach"
+    },
+    {
+      "payment_id": "PAY-9016",
+      "invoice_id": "INV-2018",
+      "customer_id": "FRAY-006",
+      "received_at": "2026-08-26T14:30:00Z",
+      "amount_cents": 305850,
+      "currency": "USD",
+      "method": "wire"
+    },
+    {
+      "payment_id": "PAY-9017",
+      "invoice_id": "INV-2019",
+      "customer_id": "ACME-001",
+      "received_at": "2026-08-27T14:30:00Z",
+      "amount_cents": 784175,
+      "currency": "USD",
+      "method": "card"
+    },
+    {
+      "payment_id": "PAY-9018",
+      "invoice_id": "INV-2020",
+      "customer_id": "BOLT-002",
+      "received_at": "2026-08-01T14:30:00Z",
+      "amount_cents": 399025,
+      "currency": "USD",
+      "method": "ach"
+    },
+    {
+      "payment_id": "PAY-9019",
+      "invoice_id": "INV-2021",
+      "customer_id": "CIRR-003",
+      "received_at": "2026-08-02T14:30:00Z",
+      "amount_cents": 357525,
+      "currency": "USD",
+      "method": "wire"
+    },
+    {
+      "payment_id": "PAY-9020",
+      "invoice_id": "INV-2023",
+      "customer_id": "EAST-005",
+      "received_at": "2026-08-03T14:30:00Z",
+      "amount_cents": 603125,
+      "currency": "USD",
+      "method": "card"
+    },
+    {
+      "payment_id": "PAY-9021",
+      "invoice_id": "INV-2024",
+      "customer_id": "FRAY-006",
+      "received_at": "2026-08-04T14:30:00Z",
+      "amount_cents": 305725,
+      "currency": "USD",
+      "method": "ach"
+    },
+    {
+      "payment_id": "PAY-9022",
+      "invoice_id": "INV-2025",
+      "customer_id": "ACME-001",
+      "received_at": "2026-08-05T14:30:00Z",
+      "amount_cents": 86650,
+      "currency": "USD",
+      "method": "wire"
+    },
+    {
+      "payment_id": "PAY-9023",
+      "invoice_id": "INV-2026",
+      "customer_id": "BOLT-002",
+      "received_at": "2026-08-06T14:30:00Z",
+      "amount_cents": 913750,
+      "currency": "USD",
+      "method": "card"
+    },
+    {
+      "payment_id": "PAY-9024",
+      "invoice_id": "INV-2027",
+      "customer_id": "CIRR-003",
+      "received_at": "2026-08-07T14:30:00Z",
+      "amount_cents": 178675,
+      "currency": "USD",
+      "method": "ach"
+    },
+    {
+      "payment_id": "PAY-9025",
+      "invoice_id": "INV-2028",
+      "customer_id": "DELT-004",
+      "received_at": "2026-08-08T14:30:00Z",
+      "amount_cents": 490150,
+      "currency": "USD",
+      "method": "wire"
+    },
+    {
+      "payment_id": "PAY-9026",
+      "invoice_id": "INV-2030",
+      "customer_id": "FRAY-006",
+      "received_at": "2026-08-09T14:30:00Z",
+      "amount_cents": 720025,
+      "currency": "USD",
+      "method": "card"
+    }
+  ],
+  "credit_notes": [
+    {
+      "note_id": "CN-501",
+      "invoice_id": "INV-2003",
+      "customer_id": "CIRR-003",
+      "amount_cents": 9900,
+      "reason": "goodwill discount, agreed by AM"
+    },
+    {
+      "note_id": "CN-502",
+      "invoice_id": "INV-2019",
+      "customer_id": "DELT-004",
+      "amount_cents": 25725,
+      "reason": "damaged goods credit"
+    }
+  ]
+}

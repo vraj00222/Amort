@@ -45,7 +45,10 @@ console = Console()
 Lane = Literal["baseline", "amortize"]
 Mode = Literal["cold", "warm"]
 
-TASKS = {"ticket_triage": "amort.demo.tasks.ticket_triage"}
+TASKS = {
+    "ticket_triage": "amort.demo.tasks.ticket_triage",
+    "invoice_reconcile": "amort.demo.tasks.invoice_reconcile",
+}
 
 
 @dataclass

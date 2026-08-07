@@ -179,6 +179,28 @@ in `.env`). Without a key the demo runs offline: a scripted agent calls the same
 counts are **estimated** from the real payload size. Every such number is tagged `simulated: true`
 through the recorder, the table, and `demo_report.json`.
 
+> **Set `AMORT_UPSTREAM_OPENAI=https://api.novita.ai/openai` in `.env` before a live run.** Lane A
+> calls Novita directly via `NOVITA_API_URL`, but lane B goes through the proxy, which routes
+> `/v1/chat/completions` to `AMORT_UPSTREAM_OPENAI` — and that defaults to `api.openai.com`. Leave
+> it and lane B sends a Novita key to OpenAI and 401s. The two acceptance scripts hit the same wall.
+
+### A second task
+
+```bash
+uv run amort demo --task invoice_reconcile --offline
+```
+
+`invoice_reconcile` reconciles 30 invoices against 26 payments with its own 8-tool catalogue
+(~1,540 tokens of schema, comparable to `ticket_triage`'s ~1,500), so the Layer-1 dieting claim is
+measured against more than one catalogue shape. Two of its four short payments are fully explained
+by a credit note, so an agent that skips `lookup_credit_notes` gets exactly two rows wrong — the
+task has a wrong answer that looks plausible, which is what makes the accuracy grade worth reading.
+
+Its output list is named `lines` rather than `report` on purpose: `grader.py` keys a `report` list
+on `ticket_id`, so a second task reusing that name would be compared on a field it does not have
+and score **parity ✓ having compared nothing**. Under `lines` the grader falls through to exact
+whole-object comparison instead — which is why its parity line reads `1 field` rather than `120`.
+
 ### The stage view
 
 ```bash
@@ -330,8 +352,10 @@ the real Anthropic wire format, which is also what makes "byte-identical output"
 
 Named plainly so nobody demos this build believing otherwise:
 
-* **Layer 1 (LIGHTEN)** — no tool-schema dieting, no result spill. `interceptors.py` has the seams
-  and the hazards documented; the request goes upstream untouched.
+* **Layer 1 (LIGHTEN)** — merged and measured, but **only on the narrow gate** in `CONTRACTS.md`:
+  non-streaming, OpenAI-format requests carrying more than `AMORT_TOOL_STUB_THRESHOLD` tools.
+  Streaming requests and the Anthropic `/v1/messages` path still pass through byte-identical, so
+  Claude Code — which always streams — currently gets a transparent proxy and no dieting.
 * **Layer 2 (AMORTIZE)** — runs are recorded as Cases, but nothing distils them into Skills and
   nothing is replayed. `amort demo`'s warm lane falls back to the full agent and says so.
 * **Speculative dispatch, auth/multi-tenancy, packaging.** Out of scope for this build.
@@ -343,6 +367,10 @@ matters: you cannot honestly claim a saving before you can measure one.
 
 Start with [TEAM.md](TEAM.md) — where the build is, today's sprint board, and open
 tracks (pitch script, video demo, extra demo tasks, docs) you can claim.
+[CONTRACTS.md](CONTRACTS.md) has the frozen interfaces and file ownership;
+[CHANGELOG-AGENTS.md](CHANGELOG-AGENTS.md) is the per-branch log of what changed and which files
+were touched. Prior art and dependencies are credited in
+[ACKNOWLEDGEMENTS.md](ACKNOWLEDGEMENTS.md).
 
 ## License
 
