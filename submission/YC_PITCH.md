@@ -2,75 +2,85 @@
 
 ## One line
 
-**Amortize is the cost-control plane for enterprise AI agents.**
+**We make repetitive enterprise AI work cheaper without changing its graded
+output.**
 
 ## Ten seconds
 
-Amortize sits between AI agents and models, removes avoidable context, reuses
-verified workflows, and proves the saving in Snowflake.
+Amortize is a self-hosted proxy that puts a cost-control point between
+supported AI agents and their models, then measures cost per successful task.
 
-## Thirty seconds
+## Thirty seconds — current technical preview
 
 Enterprise agents repeatedly pay to resend tool definitions and rediscover
-workflows they already completed. Amortize is a transparent proxy that makes
-new runs lighter, turns successful repeated work into guarded Skills, and
-records cost and output parity in Snowflake. Teams change one base URL instead
-of rewriting their agents.
+workflows they already completed. Amortize is a self-hosted proxy with a fair-
+race harness and Agent Economics Receipt. LIGHTEN has cut the eight-tool schema
+context 65.4%, with a live pair using 15.2% fewer input tokens at field-exact
+parity. Guarded repeat replay is completing acceptance.
 
-## Sixty seconds
+## Thirty seconds — after the repeat gate passes
 
-Companies are deploying AI agents into support, engineering, operations, and
-finance, but their unit economics reset on every run. The same tools are resent,
-the same large outputs are reprocessed, and the same workflow is reasoned
-through again.
+Enterprise agents repeatedly pay to resend tool definitions and rediscover
+workflows they already completed. Amortize is a self-hosted proxy that lightens
+new work, reuses guarded procedures on repeats, and measures cost per successful
+task. Teams change one base URL instead of rewriting their agents. Savings fail
+when the graded output changes.
 
-Amortize is the cost-control plane for enterprise AI agents. It sits in the
-model path with one base-URL change. LIGHTEN reduces unnecessary context on new
-runs. AMORTIZE converts agreeing successful trajectories into guarded Skills
-for repeats. PROVE records every token, dollar, replay, and parity grade in
-Snowflake.
+## Sixty seconds — gate-controlled launch version
 
-Our wedge is an open-source local proxy for AI platform engineers. The paid
-product is a team control plane for shared Skills, policy, budgets, analytics,
-and chargeback. The key idea is simple: every agent run should get cheaper with
-experience.
+Companies are deploying agents across support, engineering, operations, and
+finance, but their unit economics reset on every run. The same tool manuals
+return to context, and the same solved workflow is reasoned through again.
+
+Amortize is the cost-control plane for enterprise AI agents. One endpoint puts
+us between a supported client and its model. LIGHTEN reveals only needed tool
+context on new work. REPLAY uses guarded Skills on repeated work. PROVE records
+the run economics in Snowflake and the 120-field quality verdict in a signed
+report. Every internal optimizer call counts.
+
+Our wedge is an open-source, self-hosted proxy for AI platform engineers. We
+land with one repetitive workflow, prove cost per successful task, and expand
+into shared Skills, policy, budgets, analytics, and chargeback. The idea is
+simple: repetitive agent work should get cheaper with experience.
+
+Use the LIGHTEN and REPLAY sentences only after their acceptance gates pass.
 
 ## The five YC questions
 
 ### What do you make?
 
-A transparent proxy and economic ledger that reduce the cost of tool-using AI
-agents without changing their application code.
+A self-hosted proxy, controlled comparison harness, and economics receipt that
+reduce and audit the cost of tool-using AI agents.
 
 ### Who desperately needs it?
 
-AI platform teams with repetitive, high-volume agent workflows and an owner
+AI platform teams with repetitive, high-volume workflows and an owner
 accountable for model spend.
 
 ### Why now?
 
-Agent adoption is increasing the number of model calls, tools, and context per
-business task. Provider invoices do not expose cost per successful task or safe
-procedural reuse.
+Agent adoption is increasing model calls, tools, and context per business task.
+Provider invoices do not expose cost per successful task or safe procedural
+reuse.
 
 ### What is the wedge?
 
-One base URL, open-source local deployment, and an immediate before/after cost
-report.
+One model endpoint, one measurable workflow, and an immediate direct-versus-
+Amortize cost-per-success report.
 
 ### What compounds?
 
-Verified Cases and Skills plus cross-run economic evidence. The system learns
-which procedures are reusable and how much each reuse actually saves.
+The customer-specific map from task fingerprint, to verified procedure, to
+realized savings, to fallback history.
 
-## The sentence to repeat
+## Sentence to repeat
 
-> Every agent run should get cheaper with experience.
+> The cost drops. The graded output doesn't.
 
-## The sentence to avoid
+## Sentence to avoid
 
 > We are an AI memory platform with optimization, routing, observability,
 > governance, and analytics.
 
-It is too broad. Lead with cost control; explain memory and observability as the
-mechanism and proof.
+It is too broad. Lead with cost control; explain memory as the reuse mechanism
+and Snowflake/report evidence as the proof.

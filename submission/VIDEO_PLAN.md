@@ -1,81 +1,140 @@
-# Video plan
+# Product-launch video plan
 
 Create two cuts from one truth-locked live run:
 
-1. **75-second product cut** for judges and social.
-2. **Three-minute demo backup** matching `PITCH_SCRIPT.md`.
+1. **75-second launch film** for judges, social, and the repository hero.
+2. **Three-minute demo backup** cut to the exact beats in
+   [PITCH_SCRIPT.md](PITCH_SCRIPT.md).
 
-## 75-second storyboard
+The creative rule: show a product state change every 8–12 seconds. This should
+feel like a launch film with proof, not a screen recording with narration.
 
-| Time | Visual | Voice/caption |
+The ready-to-import caption track for the current LIGHTEN-only state is
+[amortize-product-75s-current.srt](amortize-product-75s-current.srt). Replace it
+with the post-REPLAY truth-locked captions only after that gate passes.
+
+## 75-second edit decision list
+
+| Time | Shot | On-screen copy / voice |
 |---:|---|---|
-| 0:00–0:05 | Enterprise agent run repeats; cost counter resets | “Every agent run should get cheaper with experience.” |
-| 0:05–0:12 | One base URL routes the same agent through Amortize | “Amortize is the cost-control plane for enterprise AI agents.” |
-| 0:12–0:23 | Full tool catalogue collapses into on-demand discovery | “LIGHTEN removes context the model does not need.” |
-| 0:23–0:35 | Successful Cases become one verified Skill | “AMORTIZE turns repeated work into guarded execution.” |
-| 0:35–0:50 | Direct/Amortize result lands with parity | Show final truth-locked savings and 120-field parity |
-| 0:50–1:04 | Exact Snowflake run and step rows | “Do not trust the percentage. Query it.” |
-| 1:04–1:15 | Enterprise product ladder and QR | “One base URL. Same answer. Lower measured cost.” |
+| 0:00–0:04 | Actual stage result: `30 tickets complete` | `ONE WORKFLOW. COMPLETED.` |
+| 0:04–0:09 | The same direct task starts again; its cost meter resets | `SAME TASK. FULL PRICE AGAIN.` |
+| 0:09–0:15 | One-line config diff routes the client to Amortize | “Change one base URL.” |
+| 0:15–0:25 | Eight verbose tool schemas collapse into on-demand discovery | `LIGHTEN · PAY ONLY FOR NEEDED CONTEXT` |
+| 0:25–0:36 | Two agreeing Cases promote to `VERIFIED`; guards surround replay | `REPLAY · REUSE THE PROCEDURE, NOT THE PROMPT` |
+| 0:36–0:50 | Raw cold and repeat dollars land, then measured reductions | Display only final truth-locked values |
+| 0:46–0:50 | Quality seal locks in last | `PARITY {{WARM_PARITY_FIELDS}}/120 · CORRECT {{WARM_ACCURACY_FIELDS}}/120` |
+| 0:50–1:02 | Matching run ID highlights in Snowflake, then in the signed report | “Don't trust the percentage. Query it.” |
+| 1:02–1:10 | One workflow expands into a platform team and enterprise fleet | `SKILLS · POLICY · BUDGETS · CHARGEBACK` · label `PRODUCT DIRECTION` |
+| 1:10–1:15 | Product name and repository URL | `THE COST DROPS. THE GRADED OUTPUT DOESN'T.` |
 
-## First frame
+Only show Case-to-Skill promotion if the final report proves a real verified
+Skill. Otherwise replace 0:25–0:36 with the fail-open contract and label REPLAY
+as `IN FINAL VALIDATION`.
+
+## Opening and closing frames
+
+Do not begin with a logo animation. Begin inside the completed task.
+
+Close on:
 
 ```text
 AMORTIZE
 The cost-control plane for enterprise AI agents
+
+Repeated agent work should get cheaper with experience.
+github.com/vraj00222/Amort
 ```
 
-Do not start with a logo animation. Show the problem or product state within two
-seconds.
+Hold the final frame for four seconds. No additional voice after the closing
+line.
 
-## Capture list
+## Truth-locked shot list
 
-- Clean proxy health response.
-- One-base-URL configuration with all credentials cropped.
-- Cold direct-versus-Amortize result.
-- Warm result and parity stamp.
-- Snowflake rows for the exact run IDs.
-- Dashboard with backend label visible.
-- Optional voice trigger captured as a removable insert.
-- Final repository page and QR code.
+- Stage at `http://127.0.0.1:4700` showing the final four-cell result.
+- The actual one-line base URL change; all credentials cropped.
+- Cold Direct and Amortize raw dollar values.
+- Repeat Direct and Amortize raw dollar values.
+- Both quality checks: parity **and** ground-truth accuracy.
+- Verified Skill ID and guard/fallback state, only if produced by the final run.
+- Snowflake row with `RUN_ID`, token fields, `COST_USD`, backend, and model.
+- Matching `demo_report.json` fields for parity, accuracy, `simulated`, and SHA.
+- Dashboard with the actual backend label visible.
+- Repository close frame.
 
-## Recording direction
+## Product-launch motion language
 
-- Capture at 2560×1440 or higher; deliver 1920×1080, 30 fps.
-- Use 150% terminal zoom and a 16:9 safe area.
-- Add burned-in captions; assume the first watch is muted.
-- Never scroll while a judge is reading a metric.
-- Hold final percentages for 2.5 seconds and the QR code for four seconds.
-- Logs are texture, not content. Show one meaningful health line and one proof
-  row.
-- Avoid cinematic trailer effects. Use one state-change sound for LIGHTEN and
-  one restrained success tone for parity.
+- Use direct cuts, short 120–180 ms ease-outs, and one restrained highlight
+  sweep across the Snowflake row.
+- Animate dollars first and percentages second. The viewer should see the
+  denominator before the claim.
+- Lock the quality seal only after the saving appears. Caption:
+  `SAVINGS INVALID UNLESS QUALITY PASSES`.
+- Give LIGHTEN one soft compression sound and the quality seal one low,
+  confident success tone. Avoid trailer booms and glitch effects.
+- Use the deck palette: obsidian, ice blue, electric lime, steel, and amber.
+- Never show fake chat typing, stock robots, generic data-center footage, or
+  fabricated customer logos.
 
-## On-screen copy
+## Capture setup
 
-Use:
+- Record at 2560×1440 or higher; deliver 1920×1080, 30 fps.
+- Use a 16:9 safe area and 150% terminal zoom.
+- Capture clean UI and pointer passes separately from voice.
+- Burn in captions; assume the first watch is muted.
+- Keep the stage, Snowflake worksheet, report, and final slide in fixed browser
+  tabs or numbered OBS scenes. Avoid visible Alt-Tab navigation.
+- Show no `.env`, browser password manager, shell history, API key, PAT,
+  account identifier, email, or notification.
+- Keep raw recordings outside git. Commit only compressed, approved exports.
 
-- Every agent run should get cheaper with experience.
-- The cost drops. The answer doesn't.
-- Cost per successful task—not just cost per million tokens.
-- Do not trust the percentage. Query it.
-- One base URL. Same agent. Same answer. Lower measured cost.
+## Voiceover script for the 75-second cut
 
-Avoid:
+> This agent just completed 30 support tickets. Run the same workflow again,
+> and the company pays it to rediscover the procedure. Amortize changes one base
+> URL. On new work, it reveals only the tool context the model needs. On a
+> repeat, it can reuse a verified procedure behind guards and fallback. In our
+> controlled race, the same model, tickets, tools, and grader produced these
+> measured costs. The saving counts only because all 120 fields stayed correct.
+> Snowflake records the run economics; the signed report records the quality
+> verdict. Amortize gives enterprise AI teams cost per successful task—and a
+> path to Skills, budgets, policy, and chargeback. The cost drops. The graded
+> output doesn't.
 
-- revolutionary;
-- game-changing;
-- zero hallucinations;
-- guaranteed savings;
-- enterprise-ready;
-- any number not tied to the displayed commit.
+Replace “can reuse” with “reused” only after the final Skill gate passes.
 
 ## Three-minute backup
 
-Follow `PITCH_SCRIPT.md` exactly. The backup must use the same SHA, model,
-backend, and metrics as the live script. If the live run stalls, cut to the
-backup after 12 seconds without apologizing.
+Use the same screen order, timing, SHA, model, backend, and values as
+[PITCH_SCRIPT.md](PITCH_SCRIPT.md). Export with the first frame already loaded
+so a teammate can cut to it after 8–12 seconds without an apology or reset.
 
-## Exports
+If guarded REPLAY is still pending, use the verified LIGHTEN state: 1,497 → 518
+estimated schema tokens (−65.4%) plus the recorded live pair, 41,058 → 34,820
+input tokens (−15.2%) at field-exact parity. Label the live result `ONE PAIR ·
+NOT A MEAN OR DOLLAR-COST CLAIM`. Never use an older successful run against a
+newer code SHA.
+
+## Thumbnail
+
+Use one result, not a collage:
+
+```text
+THE COST DROPS.
+THE OUTPUT DOESN'T.
+
+{{L2_WARM_COST_REDUCTION_PCT}} LOWER REPEAT COST
+120 / 120 CORRECT
+```
+
+If the repeat gate has not passed, use:
+
+```text
+120 / 120 CORRECT
+THE AGENT ECONOMICS RECEIPT
+```
+
+## Export manifest
 
 ```text
 amortize-product-75s-1080p.mp4
@@ -85,4 +144,5 @@ amortize-results-final.png
 amortize-snowflake-receipt.png
 ```
 
-Keep raw recordings outside git. Commit only team-approved compressed assets.
+Every export filename should be copied into the SHA-named evidence folder in
+the runbook.

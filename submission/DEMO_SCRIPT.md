@@ -1,115 +1,169 @@
 # Exact three-minute demo sequence
 
-The product demonstration occupies 100 seconds inside `PITCH_SCRIPT.md`.
-
-## Why the complete race is pre-run
-
-The verified four-cell experiment takes roughly two minutes. Running it inside
-a three-minute pitch would leave no time to explain the company or proof. Run it
-immediately beforehand, keep its SHA/backend visible, and say it was pre-run.
-The health check is live; the results and Snowflake rows are fresh evidence.
+The complete direct/Amortize × new/repeat race is run immediately before the
+pitch. The presentation reveals that fresh result; it never pretends a
+two-minute experiment is completing inside a three-minute talk.
 
 ## Before speaking
 
+**Terminal A — leave running**
+
 ```bash
 uv run amort up
-uv run amort doctor
-uv run amort demo --task ticket_triage --live
+```
+
+**Terminal B — run and leave the stage open**
+
+```bash
+uv run amort demo --task ticket_triage --live --stage
 ```
 
 Open and pin:
 
-- the one-base-URL configuration with credentials hidden;
-- the final 2×2 terminal result;
-- the dashboard at `http://localhost:8501`;
-- Snowflake rows filtered to the exact run IDs;
-- a backup clip from the same commit.
+- stage: `http://127.0.0.1:4700`;
+- one-line base URL diff;
+- cold and repeat result states;
+- Snowflake rows for the exact run ID;
+- matching report quality fields;
+- final enterprise/close slide;
+- backup clip from the same SHA.
 
-## 0:36–0:50 — Live proxy proof
+## 0:00–0:15 — Repeat-cost reset
 
-**Show:** `base_url=http://127.0.0.1:4000/v1`
+**Show:** `30 tickets complete`, then the same direct task beginning again.
 
-**Run:**
+**Say:**
 
-```bash
-curl -s http://127.0.0.1:4000/health
+> This agent just triaged 30 support tickets. Ask it to repeat tomorrow, and
+> the company pays it to reload every tool and rediscover the same procedure.
+> Agents learn. Their economics don't.
+
+## 0:15–0:31 — Product reveal
+
+**Show:** agent → Amortize → model.
+
+**Say:**
+
+> Amortize is the cost-control plane for enterprise AI agents. We reduce
+> avoidable context on new work, reuse guarded procedures on repeats, and
+> measure cost per successful task.
+
+## 0:31–0:44 — One endpoint
+
+**Show:**
+
+```diff
+- base_url = provider
++ base_url = http://127.0.0.1:4000/v1
 ```
 
 **Say:**
 
-> This is live. The proxy is healthy, and the unchanged client is routed
-> through it.
+> This is the entire integration. Same client. Same model interface. Same eight
+> tools. One base URL now routes the workflow through Amortize.
 
-Leave after eight seconds even if the command stalls.
+Do not show `/health` until it no longer advertises stub layers.
 
-## 0:50–1:20 — Cold result
+## 0:44–0:58 — Fair-race contract
 
-**Reveal:** the cold row from the fresh pre-run 2×2.
+**Show:** direct vs Amortize, new vs repeat.
 
-> Both sides triaged the same 30 tickets with the same model, tools, and grader.
-> Direct sent every schema. Amortize discovered only what the model needed.
+**Say:**
 
-> **{{L1_SCHEMA_REDUCTION_PCT}} less schema context**,
-> **{{L1_COST_REDUCTION_PCT}} lower cost**, and
-> **{{COLD_PARITY_FIELDS}} identical fields**.
+> We ran this comparison moments ago: same model, same 30 tickets, same tools,
+> same prompt, and the same 120-field ground-truth grader.
 
-Do not celebrate before parity is visible.
+## 0:58–1:26 — New-task result
 
-## 1:20–1:50 — Repeat result
+**Reveal in order:** Direct cost → Amortize cost → reduction → parity →
+accuracy.
 
-**Reveal:** the warm row from the same run.
+```text
+Direct      {{DIRECT_COLD_COST_USD}}
+Amortize    {{AMORTIZE_COLD_COST_USD}}
+Cost        {{L1_COST_REDUCTION_PCT}} lower
+Context     {{L1_SCHEMA_REDUCTION_PCT}} less schema context
+Parity      {{COLD_PARITY_FIELDS}} / 120 identical
+Accuracy    {{COLD_ACCURACY_FIELDS}} / 120 correct
+```
 
-> Direct paid for another full loop. Amortize reused a verified procedure and
-> kept guards around the result.
+Do not celebrate before the accuracy line appears.
 
-> **{{L2_WARM_COST_REDUCTION_PCT}} cheaper**, with
-> **{{WARM_PARITY_FIELDS}}-field parity. The cost drops. The answer doesn't.
+## 1:26–1:54 — Repeat result
 
-Voice may trigger a rehearsed visual insert, but never imply the full pre-run
-race is executing live.
+**Reveal in order:** Direct cost reset → verified Skill + guard state →
+Amortize cost → reduction → quality seal.
 
-## 1:50–2:15 — Snowflake receipt
+```text
+Direct      {{DIRECT_WARM_COST_USD}}
+Amortize    {{AMORTIZE_WARM_COST_USD}}
+Cost        {{L2_WARM_COST_REDUCTION_PCT}} lower
+Parity      {{WARM_PARITY_FIELDS}} / 120 identical
+Accuracy    {{WARM_ACCURACY_FIELDS}} / 120 correct
+```
 
-**Show:** exact run IDs and their relevant step rows.
+Only show a verified Skill label if the final run produced a real Skill ID.
 
-> Do not trust the percentage. Query it. These are the model calls, internal
-> discovery calls, tools, replays, tokens, cost, and parity grade behind it.
+**If REPLAY is still pending:** do not show the repeat-cost template. Keep the
+verified LIGHTEN frame onscreen and say:
 
-Use a prewritten query. Do not edit SQL or scroll.
+> The current gate is 1,497 to 518 estimated schema tokens—65.4% less. One live
+> pair used 41,058 versus 34,820 input tokens—15.2% fewer—with field-exact
+> parity. Repeat replay is next; its 85% target is not a result.
 
-## 2:15–2:40 — Enterprise product
+## 1:54–2:18 — Agent Economics Receipt
 
-**Show:** open-source proxy → paid team control plane.
+**Show:** `{{RUN_ID}}` in Snowflake and the same ID in the signed report.
 
-> Our user runs the agents. Our buyer owns the model bill. We start with
-> measurable savings and expand into shared Skills, policy, budgets, and fleet
-> analytics.
+**Say:**
+
+> Don't trust the percentage. Query it. Snowflake records the calls, tools,
+> tokens, dollars, and backend behind this run. The signed report records parity
+> and accuracy. Together they turn model spend into cost per successful task.
+
+Highlight; do not edit SQL or scroll.
+
+## 2:18–2:42 — Enterprise motion
+
+**Show:** one workflow → one platform team → enterprise agent fleet.
+
+**Say:**
+
+> We land with one repetitive workflow and one AI platform engineer. Once the
+> economics are proven, the paid control plane expands into shared Skills,
+> policy, budgets, chargeback, and fleet analytics.
+
+Label the expansion features `PRODUCT DIRECTION`.
+
+## 2:42–3:00 — Close
+
+**Show:** winning cost result, `120/120 correct`, Amortize, repository URL.
+
+**Say:**
+
+> Companies don't buy tokens. They buy completed work. AI agents should have a
+> learning curve—and finance should have the receipt. Amortize. The cost drops.
+> The graded output doesn't.
+
+Stop speaking at 3:00.
 
 ## Acceptance
 
-- [ ] Full 2×2 run immediately before presenting
-- [ ] Same SHA in result, script, screenshot, and backup
+- [ ] Full live four-cell race completed immediately before presenting
+- [ ] Same SHA in report, script, screenshot, deck, and backup
 - [ ] `simulated: false`
-- [ ] Cold and warm parity pass
+- [ ] Correct model and backend visible
+- [ ] Cold and repeat parity pass
 - [ ] Ground-truth accuracy passes
-- [ ] Backend and model labels visible
-- [ ] Internal optimizer calls included in usage
-- [ ] No target shown as achieved
-
-## Failure ladder
-
-1. Health check exceeds eight seconds: reveal the result.
-2. Model/network fails before the pitch: use the truth-locked backup and saved
-   Snowflake rows.
-3. Snowflake fails: show the honest SQLite label and identify prior Snowflake
-   evidence as prior.
-4. Parity fails: do not claim the saving.
+- [ ] Internal optimizer usage is included
+- [ ] No acceptance target is displayed as an achieved result
 
 ## Never show
 
-- credentials, shell history, or environment files;
+- credentials, shell history, `.env`, PATs, or account identifiers;
+- `/health` while it advertises stub layers;
 - an unverified Skill;
-- scrolling logs;
+- scrolling logs or SQL editing;
 - roadmap features as shipped;
 - results from a different commit;
-- language implying the pre-run 2×2 is executing live on stage.
+- language implying the pre-run race is executing live on stage.

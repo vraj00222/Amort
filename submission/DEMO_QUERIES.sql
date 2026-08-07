@@ -3,8 +3,8 @@
 
 USE SCHEMA AMORTIZE.LEDGER;
 
--- 1. The fresh four-cell race.
--- Keep MODEL, cost, latency, and PARITY visible on screen.
+-- 1. The fresh four-cell race economics.
+-- Keep MODEL, raw dollars, and latency visible on screen.
 SELECT
   RUN_ID,
   LANE,
@@ -13,8 +13,7 @@ SELECT
   INPUT_TOKENS,
   OUTPUT_TOKENS,
   COST_USD,
-  WALL_MS,
-  PARITY
+  WALL_MS
 FROM RUNS
 ORDER BY STARTED_AT DESC
 LIMIT 4;
@@ -48,14 +47,19 @@ FROM STEPS
 WHERE RUN_ID = $DEMO_RUN_ID
 ORDER BY STEP_IDX;
 
--- 4. The quality receipt for that same run.
+-- 4. The join point for the signed quality report.
+-- PARITY is a reserved RUNS field, but the current harness grades after the
+-- initial run flush. Treat demo_report.json as authoritative for parity and
+-- accuracy until post-grade ledger emission is implemented.
 SELECT
   RUN_ID,
   TASK_FINGERPRINT,
   LANE,
   MODE,
   SKILL_ID,
-  PARITY,
   OUTPUT_HASH
 FROM RUNS
 WHERE RUN_ID = $DEMO_RUN_ID;
+
+-- On stage, show the matching demo_report.json run ID beside this result.
+-- Do not edit or scroll JSON live; use a prepared receipt frame.
