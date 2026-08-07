@@ -1,10 +1,9 @@
-"""Interceptor seams — where Layers 1 and 2 will plug in.
+"""Interceptor seams — where Layers 1 and 2 plug in.
 
-Today both hooks are **strict pass-throughs**: they receive the parsed request or
-response, return it unchanged, and the proxy is byte-identical to talking to the
-provider directly. That is the point of this build — the seams exist and are
-wired, so adding an optimization later is a change to one function body rather
-than surgery on the request path.
+Layer 1 (LIGHTEN) is live in `before_request` for non-streaming OpenAI-format
+requests over the tool-stub threshold; every other request — streaming,
+Anthropic, small — passes through **byte-identical** to talking to the provider
+directly. `after_response` remains a strict pass-through.
 
 ## The contract
 
@@ -63,9 +62,13 @@ capture so *any* client's runs become Cases.
 
 from __future__ import annotations
 
+import json
 import logging
 from dataclasses import dataclass, field
 from typing import Any, Literal
+
+from amort.config import get_settings
+from amort.proxy import lighten
 
 logger = logging.getLogger("amort.proxy.interceptors")
 
@@ -150,16 +153,78 @@ class ProxyResponse:
 
 
 def before_request(req: ProxyRequest) -> ProxyRequest:
-    """Layer 1/2 entry point. Currently a strict pass-through.
+    """Layer 1/2 entry point. Layer 1 (LIGHTEN) is live; everything else passes through.
 
-    TODO(layer1): tool-schema dieting — replace `req.body["tools"]` with compact
-    stubs + a synthetic `search_tools` tool, and record the mapping so
-    `after_response` can hydrate a stub the model selected.
+    The Layer-1 gate (frozen in CONTRACTS.md): OpenAI format, non-streaming,
+    more tools than `amort_tool_stub_threshold`, and `amort_lighten` on.
+    Anything else — streaming, Anthropic, small requests — is returned
+    untouched, which `relay()` forwards byte-identical.
 
     TODO(layer2): skill lookup — fingerprint the task and, on a confident hit,
     mark `req.meta["skill_id"]` so the server can route to the replayer instead
     of upstream.
     """
+    settings = get_settings()
+    body = req.body
+    catalog = (body or {}).get("tools") or []
+    if not (
+        settings.amort_lighten
+        and req.provider == "openai"
+        and not req.stream
+        and isinstance(body, dict)
+        and len(catalog) > settings.amort_tool_stub_threshold
+    ):
+        return req
+    if not all(isinstance(t, dict) and isinstance(t.get("function"), dict) for t in catalog):
+        return req  # not plain OpenAI function tools — don't rewrite what we can't rebuild
+    if any(str(t["function"].get("name", "")).startswith("amort__") for t in catalog):
+        return req  # already dieted (another amortize upstream of us) — never nest
+
+    # Deep copy via JSON round-trip and assign a FRESH dict: relay() detects a
+    # rewrite by identity (`body is not parsed`); in-place mutation would
+    # silently forward the original bytes. The system message is never touched.
+    fresh: dict[str, Any] = json.loads(json.dumps(body))
+    catalog = fresh.pop("tools")
+
+    # Carry-forward (stateless, re-derived each request): any catalogue tool the
+    # visible history already calls must keep its full schema, or the upstream
+    # rejects the echoed assistant tool_calls.
+    called: list[str] = []
+    for msg in fresh.get("messages") or []:
+        if isinstance(msg, dict) and msg.get("role") == "assistant":
+            for call in msg.get("tool_calls") or []:
+                name = str(((call or {}).get("function") or {}).get("name", ""))
+                if name and name not in called:
+                    called.append(name)
+    by_name = {t["function"].get("name"): t for t in catalog}
+    carry = [by_name[n] for n in called if n in by_name]
+
+    # Spill oversized tool results out of context. Deterministic by content, so
+    # the identical history re-sent next turn gets the identical replacement.
+    spilled_tokens = 0
+    for msg in fresh.get("messages") or []:
+        if isinstance(msg, dict) and msg.get("role") == "tool" and isinstance(msg.get("content"), str):
+            replacement = lighten.spill_result(msg["content"])
+            if replacement is not msg["content"]:
+                spilled_tokens += max(0, len(msg["content"]) // 4 - len(replacement) // 4)
+                msg["content"] = replacement
+
+    tools: list[dict[str, Any]] = [lighten.build_stub_tool(catalog), *carry]
+    if any(
+        lighten.SPILL_MARKER in str(m.get("content", ""))
+        for m in fresh.get("messages") or []
+        if isinstance(m, dict)
+    ):
+        tools.append(lighten.build_read_spill_tool())
+    fresh["tools"] = tools
+
+    req.meta["layer1"] = {
+        "schema_tokens_before": len(json.dumps(catalog)) // 4,
+        "schema_tokens_after": len(json.dumps(tools)) // 4,  # stub text counts — no inflated claims
+        "spilled_tokens": spilled_tokens,
+        "catalog": catalog,
+    }
+    req.body = fresh
     return req
 
 
