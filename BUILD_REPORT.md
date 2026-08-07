@@ -48,9 +48,19 @@ Two integration rounds were needed — both caught by the gate being honest:
 
 Honest caveat: deepseek trajectory variance puts ±10-20% noise on any single A/B pair; −15.2% is one measured pair, not a mean. `meta.layer1` counters land on every intercepted StepEvent.
 
-## Workstream B — AMORTIZE
+## Workstream B — AMORTIZE — **merged, accept green**
 
-*(pending merge)*
+Shipped: `skills/llm.py` (one Novita chat helper, temp 0, real usage back); `compiler.py` (`MIN_CASES_TO_DISTIL=2`, one validated LLM call → the five SKILL_TEMPLATE sections, deterministic machine-checked `replay-plan` block ALWAYS built from the recorded trajectory so replay correctness never depends on model prose, template-skill fallback marked `compiler: template`, frontmatter + `version`/`runs_observed`/`parity_passes`, verified iff ≥2 cases grade field-exact pairwise); `replayer.py` (FULL REPLAY: LLM#1 bind → steps as code via `tool_executor` with guard grammar `<tool> returns <field> <op> <value>` → deterministic report assembly from tool outputs only → LLM#2 verify on a compact digest; ≤2 LLM calls; any failure → clean fallback; `build_plan_directive` with budget truncation); `grader.record_parity` promotion ladder (2 passes promote, any fail quarantines).
+
+Measured (accept_layer2, live Novita): cold baseline $0.0117 / 69,063 tok → **warm FULL REPLAY $0.0002, −98.3%, 2 LLM calls, parity ✓**; compile promotes two agreeing cold runs to `verified`; a broken guard (`fetch_tickets returns count >= 1, actual 0`) aborts cleanly and the cold fallback completes.
+
+Known quirk (B's finding, kept honest): fixture ticket TKT-4116 is a ~50% transcription coin-flip for the **cold** model despite fully-specified rules (warm replay always matches ground truth — it's deterministic code). The fixture data is unambiguous, so we did NOT tune it to the model's mistakes; occasional cold-pair parity ✗ is real model noise and the demo says so.
+
+## Integration — PLAN REPLAY wiring (integrator)
+
+`before_request` now tries Layer 2 first: fingerprint(system, last user msg, tool names) → `search_skill` → on a confident **verified** hit, the catalogue is cut to `tools_required` only and the compiled plan is injected as its own system message (the client's system message is never modified; injection is deterministic per turn; capped at `AMORT_INJECT_BUDGET`). `meta.layer2 = {plan_replay, skill_id, injected_tokens, tools_kept/dropped}` lands on the StepEvent. Kill switches: `AMORT_LIGHTEN`, `AMORT_PLAN_REPLAY`. `accept_layer1` pins `AMORT_PLAN_REPLAY=false` in its spawned proxies so a verified skill can't hijack its A/B.
+
+**Layer-1 live variance, stated plainly:** single-pair A/B measurements on this task ranged **−25.3% to +7%** across the day (deepseek trajectory wobble: the OFF arm itself varies by ±1 full turn). Two structural leaks were found via ledger traces and fixed (param-sketch hints for nested schemas; digest keeping timestamps; explicit "parallel calls work on stub tools" steering). The number the demo shows is whatever the run measures.
 
 ## Workstream C — SHOWTIME
 

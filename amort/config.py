@@ -60,6 +60,7 @@ class Settings(BaseSettings):
 
     # --- optimizer knobs -----------------------------------------------------
     amort_lighten: bool = True
+    amort_plan_replay: bool = True
     amort_tool_stub_threshold: int = 4
     amort_spill_threshold: int = 1500  # tokens (chars/4 on the serialized result)
     amort_inject_budget: int = 2000  # tokens, cap on an injected plan + schemas

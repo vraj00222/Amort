@@ -613,6 +613,7 @@ def _finish(
                     if (layer1 := req.meta.get("layer1"))
                     else None
                 ),
+                "layer2": req.meta.get("layer2"),
             },
         )
     )

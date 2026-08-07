@@ -152,6 +152,64 @@ class ProxyResponse:
     meta: dict[str, Any] = field(default_factory=dict)
 
 
+def _plan_replay(req: ProxyRequest) -> ProxyRequest | None:
+    """Layer 2 PLAN REPLAY: inject a verified skill's plan, keep only its tools.
+
+    Returns None (no rewrite) unless a confident, `verified` skill matches this
+    request's fingerprint. The directive is inserted as a SEPARATE system
+    message right after the leading one (OpenAI path only — the existing system
+    message is never modified, per the CONTRACTS hazard), deterministically on
+    every turn, so re-sent histories stay cache-consistent. Injection is capped
+    at `amort_inject_budget` tokens by `build_plan_directive`.
+    """
+    settings = get_settings()
+    body = req.body
+    tools = (body or {}).get("tools") or []
+    if not (
+        settings.amort_plan_replay
+        and req.provider == "openai"
+        and not req.stream
+        and isinstance(body, dict)
+        and tools
+        and req.last_user_message
+    ):
+        return None
+    if any(str((t.get("function") or {}).get("name", "")).startswith("amort__") for t in tools):
+        return None  # already rewritten upstream of us
+
+    from amort.skills.store_everos import fingerprint, fingerprint_query, search_skill
+
+    names = req.tool_names
+    fp = fingerprint(req.system_text, req.last_user_message, names)
+    match = search_skill(fp, fingerprint_query(req.system_text, req.last_user_message, names))
+    if match is None or not match.is_confident or match.skill.status != "verified":
+        return None
+    required = set(match.skill.tools_required or [])
+    if not required or not required.issubset(set(names)):
+        return None  # the skill needs tools this client does not offer
+
+    from amort.skills.replayer import build_plan_directive
+
+    directive = build_plan_directive(match.skill, settings.amort_inject_budget)
+    fresh: dict[str, Any] = json.loads(json.dumps(body))
+    fresh["tools"] = [
+        t for t in fresh["tools"] if (t.get("function") or {}).get("name") in required
+    ]
+    messages = list(fresh.get("messages") or [])
+    insert_at = 1 if messages and messages[0].get("role") == "system" else 0
+    messages.insert(insert_at, {"role": "system", "content": directive})
+    fresh["messages"] = messages
+    req.body = fresh
+    req.meta["layer2"] = {
+        "plan_replay": True,
+        "skill_id": match.skill_id,
+        "injected_tokens": len(directive) // 4,
+        "tools_kept": len(fresh["tools"]),
+        "tools_dropped": len(tools) - len(fresh["tools"]),
+    }
+    return req
+
+
 def before_request(req: ProxyRequest) -> ProxyRequest:
     """Layer 1/2 entry point. Layer 1 (LIGHTEN) is live; everything else passes through.
 
@@ -160,10 +218,14 @@ def before_request(req: ProxyRequest) -> ProxyRequest:
     Anything else — streaming, Anthropic, small requests — is returned
     untouched, which `relay()` forwards byte-identical.
 
-    TODO(layer2): skill lookup — fingerprint the task and, on a confident hit,
-    mark `req.meta["skill_id"]` so the server can route to the replayer instead
-    of upstream.
+    Layer 2 (PLAN REPLAY) runs first: a verified skill matching this request's
+    fingerprint replaces the catalogue with only `tools_required` and injects
+    the compiled plan as its own system message — in which case Layer-1 dieting
+    is moot and skipped.
     """
+    planned = _plan_replay(req)
+    if planned is not None:
+        return planned
     settings = get_settings()
     body = req.body
     catalog = (body or {}).get("tools") or []

@@ -114,9 +114,8 @@ def check_small_request_untouched() -> str:
 
 
 def check_search_resolution() -> str:
-    from amort.proxy.lighten import resolve_search_tools
-
     from amort.demo.tasks.ticket_triage import TOOLS_OPENAI
+    from amort.proxy.lighten import resolve_search_tools
 
     hits = resolve_search_tools(TOOLS_OPENAI, "fetch the open support tickets")
     hit_names = [t["function"]["name"] for t in hits]
@@ -130,9 +129,8 @@ def check_search_resolution() -> str:
 
 
 def check_spill_roundtrip() -> str:
-    from amort.proxy.lighten import resolve_read_spill, spill_result
-
     from amort.demo.tasks.ticket_triage import execute_tool
+    from amort.proxy.lighten import resolve_read_spill, spill_result
 
     big = json.dumps(execute_tool("fetch_tickets", {"range": "last_7_days"}), default=str)
     assert len(big) // 4 > 1500, "fixture result unexpectedly small — pick a bigger payload"
@@ -155,7 +153,12 @@ def check_spill_roundtrip() -> str:
 
 
 def _spawn_proxy(port: int, lighten: bool) -> subprocess.Popen:
-    env = os.environ | {"AMORT_LIGHTEN": "true" if lighten else "false"}
+    # Plan replay off: this test isolates Layer 1, and a verified skill from an
+    # earlier Layer-2 run would otherwise hijack both arms of the comparison.
+    env = os.environ | {
+        "AMORT_LIGHTEN": "true" if lighten else "false",
+        "AMORT_PLAN_REPLAY": "false",
+    }
     proc = subprocess.Popen(
         [sys.executable, "-m", "uvicorn", "amort.proxy.server:app",
          "--host", "127.0.0.1", "--port", str(port), "--log-level", "warning"],
@@ -175,6 +178,14 @@ def _spawn_proxy(port: int, lighten: bool) -> subprocess.Popen:
 
 
 def check_live_on_vs_off() -> str:
+    """2 runs per arm, compare MEANS — a single pair is a coin flip.
+
+    deepseek's trajectory varies ±1 full turn run-to-run (measured spread on
+    one arm: 31k-42k input tokens on identical code), which swamps a
+    single-pair comparison. Means over 2 pairs measure the layer, not the dice.
+    Parity is still asserted on every individual pair — output equality has no
+    noise budget.
+    """
     from amort.config import get_settings
     from amort.demo.tasks import ticket_triage as task
     from amort.skills.grader import grade
@@ -182,25 +193,38 @@ def check_live_on_vs_off() -> str:
     settings = get_settings()
     assert settings.novita_api_key, "NOVITA_API_KEY required for the live check"
 
-    results = {}
+    baseline_report = None
+    tokens: dict[str, list[int]] = {"off": [], "on": []}
     for label, port, lighten in (("off", 4452, False), ("on", 4451, True)):
         proc = _spawn_proxy(port, lighten)
         try:
-            report, rec = task.run_live(
-                lane="amortize", mode="cold", model=settings.novita_model,
-                base_url=f"http://127.0.0.1:{port}/v1", api_key=settings.novita_api_key,
-            )
-            assert rec.ok, f"lighten={label} run failed: {rec.error}"
-            results[label] = (report, rec.input_tokens, rec.output_tokens)
+            for _ in range(2):
+                report, rec = task.run_live(
+                    lane="amortize", mode="cold", model=settings.novita_model,
+                    base_url=f"http://127.0.0.1:{port}/v1", api_key=settings.novita_api_key,
+                )
+                assert rec.ok, f"lighten={label} run failed: {rec.error}"
+                if baseline_report is None:
+                    baseline_report = report
+                else:
+                    parity = grade(baseline_report, report)
+                    assert parity.ok, (
+                        f"lighten={label} output differs: {parity.reason} {parity.mismatches[:3]}"
+                    )
+                tokens[label].append(rec.input_tokens)
         finally:
             proc.terminate()
             proc.wait(timeout=10)
 
-    parity = grade(results["off"][0], results["on"][0])
-    assert parity.ok, f"outputs differ with L1 on: {parity.reason} {parity.mismatches[:3]}"
-    off_in, on_in = results["off"][1], results["on"][1]
-    assert on_in < off_in, f"input tokens not reduced: on={on_in:,} off={off_in:,}"
-    return f"[parity OK; input tokens {off_in:,} -> {on_in:,} (-{1 - on_in / off_in:.1%})]"
+    off_mean = sum(tokens["off"]) / len(tokens["off"])
+    on_mean = sum(tokens["on"]) / len(tokens["on"])
+    assert on_mean < off_mean, (
+        f"mean input tokens not reduced: on={tokens['on']} off={tokens['off']}"
+    )
+    return (
+        f"[parity OK on all pairs; mean input tokens {off_mean:,.0f} -> {on_mean:,.0f} "
+        f"(-{1 - on_mean / off_mean:.1%}) | off={tokens['off']} on={tokens['on']}]"
+    )
 
 
 def main() -> int:

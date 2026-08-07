@@ -27,6 +27,10 @@ echo "  quirks intact"
 echo "[smoke_proxy]";        uv run python scripts/smoke_proxy.py
 echo "[smoke_claude_code]";  uv run python scripts/smoke_claude_code.py
 echo "[smoke_ledger]";       uv run python scripts/smoke_ledger.py
+# Isolated memory dir: the decoy-discrimination assertion predates the compiler
+# and fails against a store holding a real compiled ticket-triage skill.
+echo "[smoke_everos]";       AMORT_MEMORY_DIR="$(mktemp -d)/memory" uv run python scripts/smoke_everos.py
+echo "[smoke_dash]";         uv run python scripts/smoke_dash.py
 
 if [ "$LEVEL" -ge 1 ]; then
   echo "[test_lighten]"

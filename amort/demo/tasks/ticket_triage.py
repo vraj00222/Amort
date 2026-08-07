@@ -315,6 +315,36 @@ TASK_PROMPT = (
     "which ones need a drafted first response."
 )
 
+# The same task WITHOUT the procedural script — correctness rules and output
+# contract only. This is what a real client prompt looks like before anyone has
+# hand-tuned a procedure into it, and it is the arm PLAN REPLAY is measured on:
+# against SYSTEM (procedure baked in) a cold run has no exploration to
+# eliminate, so an injected plan can only add tokens.
+SYSTEM_EXPLORE = (
+    "You are a support triage agent for a B2B SaaS company. You have tools for reading tickets, "
+    "looking up customers, searching the knowledge base, classifying, checking SLAs, assigning "
+    "queues, drafting replies, and logging outcomes. Cover every ticket from the requested "
+    "window regardless of status (pending tickets are triaged too).\n\n"
+    "Set priority with exactly this rule, using each ticket's SLA breach state and the "
+    "customer's plan tier:\n"
+    "  P0 = breached AND plan is enterprise\n"
+    "  P1 = breached OR plan is enterprise (but not both)\n"
+    "  P2 = neither, AND (reported_severity is high or urgent, OR plan is team)\n"
+    "  P3 = everything else\n"
+    "sla_breach is check_sla's `breached` copied verbatim per ticket — never recompute it. "
+    "draft_reply_needed is true if and only if the ticket's first_response_at is null. "
+    "Queues map from product area: billing→billing-ops, auth→identity, api→platform-api, "
+    "dashboard→web-app, mobile→mobile, integrations→partner-integrations. "
+    "Include every fetched ticket exactly once.\n\n"
+    "The final message must be a single JSON object and nothing else — no prose, no code "
+    "fence, no preamble; its first character must be '{':\n"
+    '{"task": "ticket_triage", "ticket_count": <int>, "report": [\n'
+    '  {"ticket_id": str, "queue": str, "priority": "P0"|"P1"|"P2"|"P3", '
+    '"sla_breach": bool, "draft_reply_needed": bool}\n'
+    "], \"summary\": {\"breaches\": <int>, \"p0\": <int>, \"by_queue\": {<queue>: <int>}}}\n"
+    "Include every ticket exactly once, ordered by ticket_id ascending."
+)
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Tool implementations — pure functions of the fixture
@@ -637,6 +667,7 @@ def run_live(
     api_key: str | None,
     max_turns: int = 12,
     recorder: RunRecorder | None = None,
+    system: str | None = None,
 ) -> tuple[dict[str, Any], RunRecorder]:
     """Drive the task against an OpenAI-compatible upstream (Novita).
 
@@ -645,16 +676,20 @@ def run_live(
     messages, and usage lives on `prompt_tokens`/`completion_tokens`. Assistant
     echoes are sanitized to `{role, content, tool_calls}` — deepseek via Novita
     can return extra fields (`reasoning_content`) that 400 when echoed back.
+
+    `system` overrides the default prompt (the plan-replay acceptance test
+    drives the SYSTEM_EXPLORE variant through here).
     """
     from openai import OpenAI
 
+    sys_prompt = system or SYSTEM
     rec = recorder or RunRecorder(
-        lane=lane, mode=mode, system=SYSTEM, user_msg=TASK_PROMPT,
+        lane=lane, mode=mode, system=sys_prompt, user_msg=TASK_PROMPT,
         tool_names=TOOL_NAMES, model=model,
     )
     client = OpenAI(api_key=api_key, base_url=base_url, max_retries=2, timeout=600.0)
     messages: list[dict[str, Any]] = [
-        {"role": "system", "content": SYSTEM},
+        {"role": "system", "content": sys_prompt},
         {"role": "user", "content": TASK_PROMPT},
     ]
     final_text = ""
