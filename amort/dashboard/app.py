@@ -71,12 +71,23 @@ if n_runs == 0:
     )
     st.stop()
 
-st.warning(
-    "**Layer 1 (LIGHTEN) and Layer 2 (AMORTIZE) are stubs in this build.** Every run below is a "
-    "cold run, so the lanes cost the same and net savings are ~$0. That is the honest state of "
-    "the system, not a data problem — the charts exist so the curve can be watched as the layers land.",
-    icon="⚠️",
+# Show the stub warning only while NEITHER layer has measured evidence in the
+# ledger: no meta.layer1 steps (LIGHTEN) and no replay steps (AMORTIZE).
+_evidence = q(
+    "SELECT SUM(CASE WHEN CAST(META AS VARCHAR) LIKE '%layer1%' THEN 1 ELSE 0 END), "
+    "SUM(CASE WHEN KIND = 'replay' THEN 1 ELSE 0 END) FROM STEPS"
 )
+_l1_steps, _replay_steps = (
+    (int(_evidence[0][0] or 0), int(_evidence[0][1] or 0)) if _evidence else (0, 0)
+)
+if _l1_steps == 0 and _replay_steps == 0:
+    st.warning(
+        "**Layer 1 (LIGHTEN) and Layer 2 (AMORTIZE) report no measured savings yet.** Every run "
+        "below is a cold run, so the lanes cost the same and net savings are ~$0. That is the "
+        "honest state of the system, not a data problem — the charts exist so the curve can be "
+        "watched as the layers land.",
+        icon="⚠️",
+    )
 
 # ── 1. the amortization curve ────────────────────────────────────────────────
 st.subheader("Cost per run")
@@ -160,24 +171,63 @@ else:
 
 # ── 4. skills ────────────────────────────────────────────────────────────────
 st.subheader("Skills")
+
+# The markdown store is the source of truth for replay; the ledger SKILLS table
+# is append-only, so take the LATEST row per SKILL_ID (per CONTRACTS.md).
 skills = q(
-    "SELECT SKILL_ID, TASK_FINGERPRINT, STATUS, RUNS_OBSERVED, PARITY_RATE, "
-    "AVG_COLD_COST, AVG_WARM_COST, TOTAL_SAVED_USD FROM SKILLS"
+    "SELECT SKILL_ID, TASK_FINGERPRINT, STATUS, CREATED_AT, RUNS_OBSERVED, PARITY_RATE, "
+    "AVG_COLD_COST, AVG_WARM_COST, TOTAL_SAVED_USD FROM SKILLS ORDER BY CREATED_AT"
 )
-if skills:
+latest = {row[0]: row for row in skills}  # dict insertion order → last write wins
+
+md_skills: list[tuple] = []
+try:
+    from pathlib import Path
+
+    from amort.skills.store_everos import _split_markdown, get_store
+
+    for sk in get_store().local.iter_skills():
+        try:
+            front, _ = _split_markdown(Path(str(sk.md_path)).read_text(encoding="utf-8"))
+        except Exception:  # noqa: BLE001
+            front = {}
+        md_skills.append((
+            sk.skill_id, sk.name, sk.status, front.get("version"),
+            front.get("runs_observed"), sk.parity_rate,
+            ", ".join(sk.tools_required),
+        ))
+except Exception as exc:  # noqa: BLE001 — a broken store must not kill the page
+    st.warning(f"could not read the markdown skill store: {exc}")
+
+if md_skills or latest:
     import pandas as pd
 
-    st.dataframe(
-        pd.DataFrame(skills, columns=["skill_id", "fingerprint", "status", "runs_observed",
-                                      "parity_rate", "avg_cold_cost", "avg_warm_cost", "saved"]),
-        width="stretch",
-    )
+    if md_skills:
+        st.caption("markdown store (source of truth for replay)")
+        st.dataframe(
+            pd.DataFrame(md_skills, columns=["skill_id", "name", "status", "version",
+                                             "runs_observed", "parity_rate", "tools_required"]),
+            width="stretch",
+        )
+    else:
+        st.caption(f"markdown store: empty ({settings.skills_dir})")
+    if latest:
+        st.caption("ledger SKILLS (latest row per skill_id)")
+        st.dataframe(
+            pd.DataFrame(
+                list(latest.values()),
+                columns=["skill_id", "fingerprint", "status", "created_at", "runs_observed",
+                         "parity_rate", "avg_cold_cost", "avg_warm_cost", "saved"],
+            ),
+            width="stretch",
+        )
+    else:
+        st.caption("ledger SKILLS table: empty — the grader has not written any rollups yet.")
 else:
     st.info(
-        "No skills in the ledger. `skills/compiler.py` is a **TODO(layer2) stub** — runs are "
-        "recorded as EverOS Cases, but nothing distils them into Skills yet. Locally-written "
-        "skills (from the Phase 4 smoke test) live in "
-        f"`{settings.skills_dir}` and are listed by `amort skills`.",
+        "No skills anywhere yet — neither in the markdown store "
+        f"(`{settings.skills_dir}`) nor in the ledger SKILLS table. Runs are recorded as "
+        "EverOS Cases, but nothing has distilled them into Skills.",
         icon="🧩",
     )
 

@@ -36,9 +36,17 @@ The ±few-% Δ is honest run-to-run noise around 0 — exactly right while both 
 
 Also this phase: GitHub remote wired (`vraj00222/Amort`), TEAM.md for contributors, license aligned to the repo's MIT LICENSE.
 
-## Workstream A — LIGHTEN
+## Workstream A — LIGHTEN — **merged, accept green**
 
-*(pending merge)*
+Shipped: `amort/proxy/lighten.py` (stub catalogue inside the synthetic `amort__search_tools` tool's description; substring+fuzzy resolution; content-hash spill with head/tail + short-fields digest; `amort__read_spill` head|tail|grep), `before_request` dieting (fresh-dict rewrite, carry-forward of history-called schemas, system never touched), `_lighten_relay` loop in `passthrough.py` (cap 6, synthetic-only splices, per-iteration StepEvents, **accumulated usage patched into the final response** so the client's recorder sees true totals, fallback re-send of the original body on any failure). Streaming/Anthropic/small requests: byte-identical passthrough (smokes green).
+
+Measured (accept_layer1): **schema tokens −65.8%** on the 8-tool fixture (stub text counted); **live end-to-end through two proxies: parity ✓, input tokens 41,058 → 34,820 (−15.2%)**.
+
+Two integration rounds were needed — both caught by the gate being honest:
+1. First post-merge A/B was **+10%**: `assign_queue`'s `[structured params — load the schema first]` hint caused a discovery round-trip whose dropped reasoning was re-paid (~11k tok). Fix: names-only param sketch (`assignments(list of {ticket_id, queue, priority})`) makes nested tools directly callable.
+2. Second A/B was worse: the spill digest's 20-char value cap silently dropped ISO timestamps, so the model rationally paged the spill 3× for `first_response_at` (~16k tok). Fix: cap 26 keeps timestamps; digest now truly carries every scalar field.
+
+Honest caveat: deepseek trajectory variance puts ±10-20% noise on any single A/B pair; −15.2% is one measured pair, not a mean. `meta.layer1` counters land on every intercepted StepEvent.
 
 ## Workstream B — AMORTIZE
 
