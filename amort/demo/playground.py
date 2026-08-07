@@ -206,7 +206,9 @@ def run_prompt(prompt: str) -> None:
             "type": "delta", "mode": "warm" if warm else "cold",
             "tokens_pct": round((b["tokens"] - a["tokens"]) / a["tokens"] * 100, 1),
             "cost_pct": round((b["cost"] - a["cost"]) / a["cost"] * 100, 1) if a.get("cost") else None,
-            "parity": parity.verdict,
+            "left_wall_ms": a.get("wall_ms"), "right_wall_ms": b.get("wall_ms"),
+            "left_cost": a.get("cost"), "right_cost": b.get("cost"),
+            "parity": parity.verdict, "compared": parity.compared,
         })
 
     if "rec" in a:

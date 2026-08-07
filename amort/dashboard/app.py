@@ -149,10 +149,12 @@ totals = q(
 n_runs, n_tokens, total_cost, total_wall = totals[0] if totals else (0, 0, 0.0, 0)
 
 # Per-lane averages, so the headline tile compares like with like: a lane that
-# simply ran more times would otherwise look more expensive.
+# simply ran more times would otherwise look more expensive. Restricted to the
+# live demo model — offline runs log under the estimate model at different
+# rates, and blending estimates into a measured comparison would be dishonest.
 lane_avg = q(
     "SELECT LANE, COUNT(*), AVG(COST_USD), AVG(INPUT_TOKENS + OUTPUT_TOKENS) "
-    "FROM RUNS GROUP BY LANE"
+    f"FROM RUNS WHERE MODEL = '{settings.novita_model}' GROUP BY LANE"
 )
 _avg = {str(r[0]): (int(r[1] or 0), float(r[2] or 0.0), float(r[3] or 0.0)) for r in lane_avg}
 _base, _amort = _avg.get("baseline"), _avg.get("amortize")
@@ -170,8 +172,8 @@ if _base and _amort and _base[1] > 0:
         f"${_amort[1]:,.4f}",
         delta=f"{delta_pct:+.1f}% vs direct",
         delta_color="inverse",
-        help=f"direct averages ${_base[1]:,.4f} over {_base[0]:,} run(s); "
-             f"amortize ${_amort[1]:,.4f} over {_amort[0]:,}.",
+        help=f"live {settings.novita_model} runs only — direct averages ${_base[1]:,.4f} "
+             f"over {_base[0]:,} run(s); amortize ${_amort[1]:,.4f} over {_amort[0]:,}.",
     )
 else:
     c3.metric("spend", f"${float(total_cost):,.4f}",

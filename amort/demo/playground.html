@@ -43,19 +43,28 @@
                border:1px solid var(--line); border-radius:6px; padding:.3vh .6vw; }
   .lane.warm .modebadge { color:var(--purple); border-color:var(--purple); }
 
-  #verdict { text-align:center; font-size:3vh; min-height:4vh; }
-  #verdict .pct { font-weight:800; color:var(--accent); font-size:4vh; }
-  #verdict .pct.bad { color:var(--bad); }
-  #verdict .par { margin-left:1.2vw; color:var(--accent); }
-  #verdict .par.bad { color:var(--bad); }
+  #verdict { text-align:center; font-size:2.4vh; min-height:5vh; display:flex; gap:2.4vw;
+             align-items:baseline; justify-content:center; }
+  #verdict .vcell { color:var(--label); font-size:1.6vh; letter-spacing:.08em; text-transform:uppercase; }
+  #verdict .vcell b { display:block; font-size:3.6vh; letter-spacing:0; text-transform:none;
+                      color:var(--accent); font-weight:800; }
+  #verdict .vcell b.bad { color:var(--bad); }
+  #verdict .vcell b.neutral { color:#fff; }
 
   .features { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1.4vw; }
-  .feat { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:1.6vh 1.2vw; }
+  .feat { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:1.6vh 1.2vw;
+          transition:border-color .25s, box-shadow .25s, transform .25s; }
   .feat h3 { font-size:1.8vh; letter-spacing:.1em; margin-bottom:.6vh; }
-  .feat p { color:var(--label); font-size:1.6vh; }
-  .feat .live { float:right; font-size:1.3vh; color:var(--accent); opacity:0; transition:opacity .3s; }
-  .feat.on .live { opacity:1; }
+  .feat h3 .fsub { color:var(--label); font-weight:400; letter-spacing:.04em; }
+  .feat p { color:var(--label); font-size:1.55vh; }
+  .factivity { margin-top:.8vh; font-size:1.5vh; color:var(--label); border-top:1px dashed var(--line);
+               padding-top:.6vh; transition:color .25s; }
+  .feat.on { transform:translateY(-.4vh); }
   #f-lighten h3 { color:var(--blue); } #f-amortize h3 { color:var(--purple); } #f-prove h3 { color:var(--snow); }
+  #f-lighten.on { border-color:var(--blue); box-shadow:0 0 18px rgba(79,143,247,.35); }
+  #f-amortize.on { border-color:var(--purple); box-shadow:0 0 18px rgba(167,139,250,.35); }
+  #f-prove.on { border-color:var(--snow); box-shadow:0 0 18px rgba(41,181,232,.35); }
+  .feat.on .factivity { color:#fff; }
 
   #powerbar { display:flex; justify-content:space-between; align-items:center; gap:2vw;
               border-top:1px solid var(--line); padding-top:1.2vh; font-size:1.7vh; }
@@ -87,7 +96,7 @@
 <body>
 
 <h1>amortize <em>· same prompt, two paths, real numbers</em></h1>
-<div class="sub">One environment variable turns the left lane into the right lane. Every figure below is measured live on Novita — nothing is scripted or asserted.</div>
+<div class="sub">One env var turns the left lane into the right lane. Everything below is measured live on Novita.</div>
 
 <div class="promptrow">
   <input id="prompt" value="Triage all support tickets from the last 7 days, any status: classify them, check every ticket against its SLA, and assign each one to the right queue with a priority. Flag which ones need a drafted first response." />
@@ -114,17 +123,15 @@
 <div id="verdict"></div>
 
 <div class="features">
-  <div class="feat" id="f-lighten"><span class="live">● ACTIVE NOW</span><h3>① LIGHTEN — every prompt</h3>
-    <p>The proxy strips the 8 verbose tool schemas to one-line stubs; the model pulls a full schema only
-    when it needs one, and oversized tool results spill to disk with a readable digest. Fewer tokens in,
-    the same answer out — the parity check proves it.</p></div>
-  <div class="feat" id="f-amortize"><span class="live">● ACTIVE NOW</span><h3>② AMORTIZE — repeat prompts</h3>
-    <p>Every run is remembered as a Case in EverOS. Two runs that agree field-exactly distil into a verified
-    Skill. Repeat the prompt and the right lane replays that skill as code — two small model calls instead
-    of a whole agent loop. Any guard failure falls back to the full agent.</p></div>
-  <div class="feat" id="f-prove"><span class="live">● ACTIVE NOW</span><h3>③ PROVE — always on</h3>
-    <p>Every model call, tool call and replay lands as a row in the Snowflake ledger; a field-exact grader
-    compares both lanes' outputs. If a number is not measured, it is not on this screen.</p></div>
+  <div class="feat" id="f-lighten"><h3>① LIGHTEN <span class="fsub">every prompt</span></h3>
+    <p>Verbose tool schemas → one-line stubs. Big results spill to disk. Same answer, fewer tokens.</p>
+    <div class="factivity" data-f="act">idle</div></div>
+  <div class="feat" id="f-amortize"><h3>② AMORTIZE <span class="fsub">repeat prompts</span></h3>
+    <p>Runs are remembered in EverOS; agreeing runs distil a verified Skill that replays as code.</p>
+    <div class="factivity" data-f="act">idle</div></div>
+  <div class="feat" id="f-prove"><h3>③ PROVE <span class="fsub">always on</span></h3>
+    <p>Every step is a Snowflake row; a field-exact grader compares both outputs. Measured or not shown.</p>
+    <div class="factivity" data-f="act">idle</div></div>
 </div>
 
 <div id="powerbar">
@@ -148,22 +155,43 @@
     var el = document.getElementById("lane-" + name);
     function m(k) { return el.querySelector('[data-m="' + k + '"]'); }
     lanes[name] = { el: el, tok: m("tok"), usd: m("usd"), clock: m("clock"),
-                    ticker: m("ticker"), mode: m("mode"), t0: 0, totTok: 0, totUsd: 0, timer: null };
+                    ticker: m("ticker"), mode: m("mode"), t0: 0, totTok: 0, totUsd: 0,
+                    showTok: 0, showUsd: 0, _raf: null, timer: null };
   });
-  function fmt(n) { return (n || 0).toLocaleString("en-US"); }
+  function fmt(n) { return Math.round(n || 0).toLocaleString("en-US"); }
   function pulse(id) {
     var el = document.getElementById(id); if (!el) return;
     el.classList.remove("pulse"); void el.offsetWidth; el.classList.add("pulse");
     clearTimeout(el._pt); el._pt = setTimeout(function () { el.classList.remove("pulse"); }, 900);
   }
-  function featOn(id) {
+  function featOn(id, activity) {
     var el = document.getElementById(id); if (!el) return;
     el.classList.add("on"); clearTimeout(el._ft);
-    el._ft = setTimeout(function () { el.classList.remove("on"); }, 2500);
+    if (activity) el.querySelector('[data-f="act"]').textContent = activity;
+    el._ft = setTimeout(function () { el.classList.remove("on"); }, 2600);
+  }
+  // smooth meter tween: numbers glide to their new value instead of jumping
+  function tween(L) {
+    if (L._raf) return;
+    function frame() {
+      var dt = 0.18;
+      L.showTok += (L.totTok - L.showTok) * dt;
+      L.showUsd += (L.totUsd - L.showUsd) * dt;
+      L.tok.textContent = fmt(L.showTok);
+      L.usd.textContent = "$" + L.showUsd.toFixed(4);
+      if (Math.abs(L.totTok - L.showTok) > 0.6 || Math.abs(L.totUsd - L.showUsd) > 0.000005) {
+        L._raf = requestAnimationFrame(frame);
+      } else {
+        L.tok.textContent = fmt(L.totTok);
+        L.usd.textContent = "$" + L.totUsd.toFixed(4);
+        L._raf = null;
+      }
+    }
+    L._raf = requestAnimationFrame(frame);
   }
   var memNodes = {};
   function memoryEvent(ev) {
-    pulse("sp-everos"); featOn("f-amortize");
+    pulse("sp-everos"); featOn("f-amortize", ev.label || "memory activity");
     var g = document.getElementById("memgraph");
     var node = memNodes[ev.node];
     if (!node) {
@@ -191,42 +219,63 @@
     if (ev.type === "prompt") {
       document.getElementById("verdict").innerHTML = "";
       ["baseline", "amortize"].forEach(function (n) {
-        var x = lanes[n]; x.totTok = 0; x.totUsd = 0;
+        var x = lanes[n]; x.totTok = 0; x.totUsd = 0; x.showTok = 0; x.showUsd = 0;
         x.tok.textContent = "0"; x.usd.textContent = "$0.0000";
         x.ticker.textContent = "waiting…"; x.clock.textContent = "";
         x.el.classList.remove("running", "warm");
       });
     } else if (ev.type === "run_start" && L) {
       L.el.classList.add("running");
-      if (ev.mode === "warm") { L.el.classList.add("warm"); L.mode.textContent = "WARM · SKILL REPLAY"; }
-      else if (ev.lane === "amortize") { L.mode.textContent = "THROUGH AMORTIZE · COLD"; }
+      if (ev.mode === "warm") {
+        L.el.classList.add("warm"); L.mode.textContent = "WARM · SKILL REPLAY";
+        featOn("f-amortize", "replaying a verified skill as code — 2 model calls");
+      } else if (ev.lane === "amortize") {
+        L.mode.textContent = "THROUGH AMORTIZE · COLD";
+        featOn("f-lighten", "dieting the tool catalogue on this request");
+      }
       L.ticker.innerHTML = "<b>run started</b>";
       startClock(L);
     } else if (ev.type === "step" && L) {
-      if (ev.kind === "llm") { pulse("sp-novita"); if (ev.lane === "amortize") featOn("f-lighten"); }
-      if (typeof ev.tokens === "number") { L.totTok += ev.tokens; L.totUsd += (ev.cost_usd || 0); }
-      L.tok.textContent = fmt(L.totTok);
-      L.usd.textContent = "$" + L.totUsd.toFixed(4);
+      if (ev.kind === "llm") {
+        pulse("sp-novita");
+        if (ev.lane === "amortize" && ev.mode !== "warm") {
+          featOn("f-lighten", "lightened request → Novita · full schemas only on demand");
+        }
+      }
+      if (typeof ev.tokens === "number") { L.totTok += ev.tokens; L.totUsd += (ev.cost_usd || 0); tween(L); }
       L.ticker.innerHTML = "<b>" + ev.kind + "</b> " + (ev.name || "") +
         (typeof ev.tokens === "number" ? " · +" + fmt(ev.tokens) + " tok" : "");
     } else if (ev.type === "run_end" && L) {
       stopClock(L);
-      pulse("sp-snowflake"); featOn("f-prove");
+      pulse("sp-snowflake");
+      featOn("f-prove", "run's steps written to the Snowflake ledger");
       L.el.classList.remove("running");
-      if (typeof ev.tokens === "number") { L.totTok = ev.tokens; L.tok.textContent = fmt(ev.tokens); }
-      if (typeof ev.cost_usd === "number") { L.totUsd = ev.cost_usd; L.usd.textContent = "$" + ev.cost_usd.toFixed(4); }
+      if (typeof ev.tokens === "number") L.totTok = ev.tokens;
+      if (typeof ev.cost_usd === "number") L.totUsd = ev.cost_usd;
+      tween(L);
       if (typeof ev.wall_ms === "number") L.clock.textContent = (ev.wall_ms / 1000).toFixed(1) + "s";
       L.ticker.innerHTML = ev.ok === false
         ? "<b style='color:var(--bad)'>failed</b> " + (ev.error || "")
         : "<b>complete</b> · " + (ev.llm_calls || 0) + " model / " + (ev.tool_calls || 0) + " tool calls";
+    } else if (ev.type === "parity") {
+      featOn("f-prove", ev.verdict === "match"
+        ? "grader: " + (ev.compared || "") + " fields compared — identical"
+        : "grader verdict: " + ev.verdict);
     } else if (ev.type === "delta") {
-      var pct = ev.tokens_pct, good = typeof pct === "number" && pct < 0;
+      var tp = ev.tokens_pct, cp = ev.cost_pct;
+      var good = typeof tp === "number" && tp < 0;
       var par = ev.parity === "match";
-      document.getElementById("verdict").innerHTML =
-        '<span class="pct' + (good ? "" : " bad") + '">' + (pct > 0 ? "+" : "") + pct + "% tokens</span>" +
-        '<span class="par' + (par ? "" : " bad") + '">' +
-        (par ? "output verified identical ✓" : (ev.parity === "n/a" ? "outputs not comparable" : "outputs differ ✗")) +
-        "</span>";
+      function cell(label, value, cls) {
+        return '<span class="vcell">' + label + '<b class="' + (cls || "") + '">' + value + "</b></span>";
+      }
+      var html = cell("tokens", (tp > 0 ? "+" : "") + tp + "%", good ? "" : "bad");
+      if (typeof cp === "number") html += cell("cost", (cp > 0 ? "+" : "") + cp + "%", cp < 0 ? "" : "bad");
+      if (ev.left_wall_ms && ev.right_wall_ms) {
+        html += cell("time", (ev.left_wall_ms / 1000).toFixed(1) + "s → " +
+                             (ev.right_wall_ms / 1000).toFixed(1) + "s", "neutral");
+      }
+      html += cell("output", par ? "identical ✓" : (ev.parity === "n/a" ? "n/a" : "differs ✗"), par ? "" : "bad");
+      document.getElementById("verdict").innerHTML = html;
       document.getElementById("runbtn").disabled = false;
     }
   }
