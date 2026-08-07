@@ -283,7 +283,8 @@ SYSTEM = (
     "queues, drafting replies, and logging outcomes.\n\n"
     "Procedure — exactly four tool calls, in this order, each tool called AT MOST ONCE with all "
     "ticket ids batched (never one call per ticket):\n"
-    "1. fetch_tickets for the requested window.\n"
+    "1. fetch_tickets for the requested window with status='any' (pending tickets are "
+    "triaged too) and limit=100.\n"
     "2. classify every ticket in a single batched call.\n"
     "3. check_sla for every ticket in a single batched call (its result includes each "
     "customer's plan tier — you do not need get_customer).\n"
@@ -296,9 +297,11 @@ SYSTEM = (
     "  P1 = breached OR plan is enterprise (but not both)\n"
     "  P2 = neither, AND (reported_severity is high or urgent, OR plan is team)\n"
     "  P3 = everything else\n"
-    "sla_breach is check_sla's `breached` verbatim. draft_reply_needed is true if and only if "
-    "the ticket's first_response_at is null.\n\n"
-    "The final message must be a single JSON object and nothing else — no prose, no code fence:\n"
+    "sla_breach is check_sla's `breached` copied verbatim per ticket — never recompute it. "
+    "draft_reply_needed is true if and only if the ticket's first_response_at is null. "
+    "Include every fetched ticket exactly once.\n\n"
+    "The final message must be a single JSON object and nothing else — no prose, no code "
+    "fence, no preamble; its first character must be '{':\n"
     '{"task": "ticket_triage", "ticket_count": <int>, "report": [\n'
     '  {"ticket_id": str, "queue": str, "priority": "P0"|"P1"|"P2"|"P3", '
     '"sla_breach": bool, "draft_reply_needed": bool}\n'
@@ -307,9 +310,9 @@ SYSTEM = (
 )
 
 TASK_PROMPT = (
-    "Triage all open support tickets from the last 7 days: classify them, check every ticket "
-    "against its SLA, and assign each one to the right queue with a priority. Flag which ones "
-    "need a drafted first response."
+    "Triage all support tickets from the last 7 days, any status: classify them, check every "
+    "ticket against its SLA, and assign each one to the right queue with a priority. Flag "
+    "which ones need a drafted first response."
 )
 
 
