@@ -1,159 +1,195 @@
-# Eight-slide deck — three minutes, one story
+# Six-slide product-launch deck
+
+The editable deck is [AMORTIZE_LAUNCH_DECK.pptx](AMORTIZE_LAUNCH_DECK.pptx).
+It is designed for a three-minute product reveal: product by 0:15, evidence by
+0:58, enterprise value by 2:18, hard close at 3:00.
+
+## Audience and communication job
+
+Audience: hackathon judges first, enterprise AI platform buyers second.
+
+By the end, they should believe Amortize can become the enterprise agent
+cost-control plane because it integrates at one endpoint, measures a fair race,
+rejects savings when quality fails, and produces an auditable economics
+receipt.
 
 ## Visual system
 
-**Mood:** financial terminal meets agent runtime; precise, dark, and fast—not a
-generic purple AI gradient.
-
-| Token | Direction |
+| Role | Treatment |
 |---|---|
 | Canvas | Obsidian `#070A0F` |
-| Snowflake/proof | Ice blue `#29B5E8` |
-| Savings | Electric lime `#B8FF5A` |
-| Baseline | Cool gray `#8B95A7` |
-| Warning/fallback | Amber `#FFB84D` |
-| Type | Space Grotesk or Sora for headlines; Inter for body; JetBrains Mono for metrics |
+| Snowflake / proof | Ice blue `#29B5E8` |
+| Saving / success | Electric lime `#B8FF5A` |
+| Baseline | Steel `#8B95A7` |
+| Guard / fallback | Amber `#FFB84D` |
+| Type | Aptos Display headlines · Aptos body · Consolas evidence |
 
-Rules:
+Rules: 16:9, one composition per slide, no stock robots, no fake customer
+logos, no unverified percentage, no production instructions on screen, and no
+claim without a report + backend + commit evidence trail.
 
-- 16:9, 1920×1080.
-- One sentence or one visual idea per slide.
-- Headlines ≥54 pt; result numbers ≥96 pt.
-- No stock robots, floating brains, handshakes, code walls, or fake dashboards.
-- Animate only state changes: full context → light context; cold → warm; claim →
-  Snowflake receipt.
-- Keep source text under each measured number: `demo_report.json · commit <sha>`.
-
-## Slide 1 — The villain
-
-**On screen:**
-
-> # AI agents have amnesia.
-> ## Your cloud bill does not.
-
-Bottom-right: a small counter showing the same context block being charged on
-Run 1, Run 2, Run 3.
-
-**Purpose:** Make the problem memorable before naming the company.
-
-## Slide 2 — The one-switch reveal
-
-**On screen:**
+## Slide 1 — Start with the reset
 
 ```text
-YOUR AGENT  ── one base URL ──▶  AMORTIZE  ──▶  ANY MODEL
+THE WORKFLOW REPEATS.
+THE COST RESETS.
+
+AMORTIZE
+The cost-control plane for enterprise AI agents
 ```
 
-Under it:
+Visual: one completed ticket-triage run, then a second direct run whose meter
+starts at full cost again. Bring the product wordmark in over the reset.
 
-> No SDK swap. No agent rewrite. Fail-open by design.
+Speaker job: deliver the concrete 30-ticket opener in 15 seconds.
 
-**Live transition:** Zoom into `http://127.0.0.1:4000/v1` and switch to the
-terminal.
+## Slide 2 — The accumulating invoice
 
-## Slide 3 — Three verbs
+One invoice line grows across the slide:
 
-Use three large horizontal panels:
-
-| LIGHTEN | AMORTIZE | PROVE |
-|---|---|---|
-| Reveal tool context only when needed | Turn repeats into guarded Skills | Put every token, dollar, and parity grade in Snowflake |
+```text
+TOOL CONTEXT  +  REPEATED REASONING  +  NO TASK-LEVEL RECEIPT
+```
 
 Footer:
 
-> New work gets lighter. Repeated work gets reusable. Every claim gets a receipt.
-
-## Slide 4 — The fair race
-
-**On screen:** A 2×2 grid with two axes.
-
 ```text
-                 DIRECT          AMORTIZE
-COLD             control         LIGHTEN
-REPEAT           control         SKILL REPLAY
+THE COMPANY PAYS FOR REASONING IT ALREADY OWNS.
 ```
 
-Right edge: **Same model · Same task · Same tools · Same 120-field grader**
+Avoid three equal cards. The visual should feel like one compounding enterprise
+problem.
 
-**Purpose:** Explain experimental fairness in five seconds, then run the demo.
+## Slide 3 — One switch, three product acts
 
-## Slide 5 — The result
+Show a real configuration diff:
 
-This slide is generated only after the final truth lock.
-
-```text
-{{L1_SCHEMA_REDUCTION_PCT}}       {{L2_WARM_COST_REDUCTION_PCT}}
-less schema context              cheaper repeated run
-
-                 PARITY  ✓  {{WARM_PARITY_FIELDS}} fields
+```diff
+- base_url = provider
++ base_url = http://127.0.0.1:4000/v1
 ```
 
-Small footer:
+Then one horizontal flow:
 
 ```text
-{{FINAL_MODEL}} · {{LEDGER_BACKEND}} · demo_report.json · commit {{FINAL_SHA}}
+SUPPORTED AGENT → LIGHTEN → REPLAY → PROVE → COMPATIBLE MODEL
 ```
 
-Do not show target percentages as results.
-
-## Slide 6 — The Snowflake receipt
-
-**On screen:** A simplified trace:
+Footer:
 
 ```text
-RUN → LLM → search_tools → LLM → tool → grade
-      tokens   internal    tokens        parity ✓
+FAIL-OPEN · SAME CLIENT · NO PROPRIETARY SDK
 ```
 
-Alongside it, show one real Snowflake result table with four highlighted
-columns: `RUN_ID`, `INPUT_TOKENS`, `COST_USD`, `PARITY`.
+Use `REPLAY` visually to avoid using AMORTIZE as both the company and a verb.
+
+## Slide 4 — LIGHTEN clears its gate
+
+The current editable deck uses the newly merged Workstream A evidence:
+
+```text
+65.4%                     15.2%
+LESS TOOL-SCHEMA CONTEXT  FEWER LIVE INPUT TOKENS
+
+PARITY PASS · FIELD-EXACT FINAL REPORT
+```
+
+Evidence strip:
+
+```text
+UNIT GATE 1,497 → 518 EST. SCHEMA TOKENS · CURRENT CHECKOUT
+LIVE PAIR 41,058 → 34,820 INPUT TOKENS · 09e4396 · not a mean or dollar claim
+```
+
+Keep the caveat visible: the model showed ±10–20% trajectory variance across
+single pairs. After guarded REPLAY passes, extend this slide—or create the
+launch-day result state—with a progressive repeat-cost reveal:
+
+```text
+NEW TASK
+Direct {{DIRECT_COLD_COST_USD}} → Amortize {{AMORTIZE_COLD_COST_USD}}
+{{L1_COST_REDUCTION_PCT}} LOWER COST
+
+REPEAT
+Direct {{DIRECT_WARM_COST_USD}} → Amortize {{AMORTIZE_WARM_COST_USD}}
+{{L2_WARM_COST_REDUCTION_PCT}} LOWER COST
+
+PARITY {{WARM_PARITY_FIELDS}} / 120 · CORRECT {{WARM_ACCURACY_FIELDS}} / 120
+```
+
+Never use `≥60%` or `≥85%` as a hero result. Those remain acceptance criteria.
+
+## Slide 5 — The Agent Economics Receipt
 
 Headline:
 
-> # Don't trust the percentage. Query it.
+```text
+DON'T TRUST THE PERCENTAGE. QUERY IT.
+```
 
-## Slide 7 — From proxy to economic layer
+Show the relationship, not a wall of SQL:
 
-Three ascending product cards:
+```text
+SNOWFLAKE ECONOMICS         SIGNED DEMO REPORT
+RUN_ID                      same RUN_ID
+INPUT / OUTPUT TOKENS       simulated: false
+COST_USD                    parity: pass
+MODEL / BACKEND             accuracy: pass
+```
 
-1. **Local** — transparent proxy, SQLite fallback, developer dashboard.
-2. **Team** — shared verified Skills, budgets, policy, fleet analytics,
-   chargeback.
-3. **Economy** — reusable Skills, model brokerage, cost-aware agent routing.
+Bottom statement:
 
-Mark tiers 2 and 3 **Product direction**, not shipped.
+```text
+COST PER SUCCESSFUL TASK—not merely cost per million tokens.
+```
 
-## Slide 8 — The closing frame
+This wording is accurate for the current implementation: quality is calculated
+by the harness/report and should not be described as a persisted Snowflake
+grade row until that code exists.
 
-**On screen:**
+## Slide 6 — Land, prove, expand
 
-> # Compound intelligence.
-> # Not token bills.
+```text
+ONE WORKFLOW  →  ONE PLATFORM TEAM  →  ENTERPRISE AGENT FLEET
 
-Below: final verified result card, repository QR, team names, Snowflake × Beta
-Fund lockup.
+open-source proxy       shared Skills       policy · budgets · chargeback
+```
 
-No feature list. End on the product belief.
+Label the right-hand capabilities `PRODUCT DIRECTION`.
 
-## Optional backup slides
+Close full-screen:
 
-### A — Why this is not prompt caching
+```text
+AI AGENTS SHOULD HAVE A LEARNING CURVE.
+FINANCE SHOULD HAVE THE RECEIPT.
 
-- Caching discounts repeated bytes; Amortize changes what needs to be sent and
-  can replace an agent loop with guarded code execution.
-- Cache benefits depend on provider and prefix stability; Skills are explicit,
-  inspectable, versioned procedures.
-- Amortize records provider cache reads separately and can benefit from both.
+AMORTIZE
+THE COST DROPS. THE GRADED OUTPUT DOESN'T.
+```
 
-### B — Safety and failure behavior
+Leave `github.com/vraj00222/Amort` visible after the presenter stops speaking.
+
+## Backup slides to prepare only if time permits
+
+### Why not prompt caching?
+
+- Caching discounts repeated provider-recognized prefixes.
+- LIGHTEN changes what enters context.
+- REPLAY is designed to replace a full agent loop with guarded execution.
+- PROVE counts internal optimizer work and measures cost per successful task.
+
+### Safety boundary
 
 - Candidate Skills never replay.
-- Verified Skills still enforce guards.
-- Tool output stays out of the binding/verification model context.
-- Any optimization exception falls back to the original full request.
-- Parity and accuracy are recorded separately from cost.
+- Verified Skills still run guards.
+- Failed optimization falls back to the original request.
+- Savings fail when parity or ground-truth accuracy fails.
+- Side-effecting workflows require idempotency, approval, and action policy.
 
-### C — Current build boundaries
+### Category
 
-Use the live status from `BUILD_REPORT.md`; never claim multi-tenancy,
-production auth, or speculative dispatch.
+```text
+GATEWAY        routes model traffic
+MEMORY / RAG   restores information
+AMORTIZE       improves and audits task economics
+```
