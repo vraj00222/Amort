@@ -135,6 +135,15 @@ def check_broken_guard_falls_back() -> str:
 
 
 def check_plan_replay() -> str:
+    """PLAN REPLAY measured on the arm it exists for: a client WITHOUT a
+    hand-tuned procedure prompt.
+
+    Against the procedure-locked SYSTEM, a cold run has no exploration to
+    eliminate, so an injected plan can only add tokens (measured: +54%). Both
+    arms here run SYSTEM_EXPLORE — correctness rules and output contract, no
+    procedural script. Cold explores; the proxy injects the verified plan and
+    cuts the catalogue to tools_required. Accuracy is asserted on both arms.
+    """
     import subprocess
     import time
 
@@ -142,10 +151,24 @@ def check_plan_replay() -> str:
 
     from amort.config import get_settings
     from amort.demo.tasks import ticket_triage as task
+    from amort.skills.grader import grade_accuracy
 
     s = get_settings()
+    expected = task.expected_report()
+
+    # Cold arm: direct to Novita, exploratory prompt.
+    cold_report, cold_rec = task.run_live(
+        lane="baseline", mode="cold", model=s.novita_model,
+        base_url=f"{s.novita_api_url.rstrip('/')}/v1", api_key=s.novita_api_key,
+        system=task.SYSTEM_EXPLORE,
+    )
+    assert cold_rec.ok, f"explore-cold run failed: {cold_rec.error}"
+    cold_acc = grade_accuracy(cold_report, expected)
+    cold_tokens = cold_rec.input_tokens + cold_rec.output_tokens
+
+    # Warm arm: through the proxy, lighten off so only plan replay acts.
     port = 4453
-    env = os.environ | {"AMORT_LIGHTEN": "false"}  # isolate Layer 2's effect
+    env = os.environ | {"AMORT_LIGHTEN": "false", "AMORT_PLAN_REPLAY": "true"}
     proc = subprocess.Popen(
         [sys.executable, "-m", "uvicorn", "amort.proxy.server:app",
          "--host", "127.0.0.1", "--port", str(port), "--log-level", "warning"],
@@ -161,14 +184,20 @@ def check_plan_replay() -> str:
         report, rec = task.run_live(
             lane="amortize", mode="warm", model=s.novita_model,
             base_url=f"http://127.0.0.1:{port}/v1", api_key=s.novita_api_key,
+            system=task.SYSTEM_EXPLORE,
         )
         assert rec.ok, f"plan-replay run failed: {rec.error}"
-        cold_tokens = STATE["cold_tokens"]
+        warm_acc = grade_accuracy(report, expected)
+        assert warm_acc.ok, f"plan-replay output wrong: {warm_acc.mismatches[:3]}"
         warm_tokens = rec.input_tokens + rec.output_tokens
         assert warm_tokens < cold_tokens, (
-            f"plan replay not cheaper: {warm_tokens:,} vs cold {cold_tokens:,} tok"
+            f"plan replay not cheaper: {warm_tokens:,} vs explore-cold {cold_tokens:,} tok"
         )
-        return f"[{cold_tokens:,} -> {warm_tokens:,} tok, -{1 - warm_tokens / cold_tokens:.1%} (real number, no fixed bar)]"
+        return (
+            f"[explore-cold {cold_tokens:,} tok (accuracy {cold_acc.verdict}) -> "
+            f"plan-replay {warm_tokens:,} tok (accuracy ✓), "
+            f"-{1 - warm_tokens / cold_tokens:.1%} (real number, no fixed bar)]"
+        )
     finally:
         proc.terminate()
         proc.wait(timeout=10)

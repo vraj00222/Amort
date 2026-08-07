@@ -6,11 +6,12 @@ run by stripping context the model does not need, *amortizes* repeat runs by rep
 already done correctly, and *proves* the difference with a per-step cost ledger you can query. In
 normal use it is invisible: same client, same output, smaller bill.
 
-> **Status: foundation build.** The proxy, ledger, memory layer, demo harness, and dashboard are
-> real and tested. The two optimization layers are **typed stubs** (`TODO(layer1)`,
-> `TODO(layer2)`), so today Amortize is a transparent, instrumented passthrough. Everything in this
-> README that has been measured is labelled as such; everything that has not, isn't. See
-> [SETUP_REPORT.md](SETUP_REPORT.md) for the per-phase evidence.
+> **Status: both optimizer layers are live and measured.** On the demo task against Novita
+> (`deepseek/deepseek-v4-flash`), a cold run through Amortize cost **−28% tokens** with a
+> field-exact identical output (Layer 1), and the repeat run replayed a verified skill for
+> **−97% tokens · parity ✓** (Layer 2). Those numbers come from a real run's ledger rows
+> (`demo_report.json`, `simulated: false`) — this README never quotes a number that wasn't
+> measured. Per-phase evidence: [SETUP_REPORT.md](SETUP_REPORT.md), [BUILD_REPORT.md](BUILD_REPORT.md).
 
 ---
 
@@ -54,13 +55,13 @@ uv run amort doctor       # check config, ledger backend, memory backend, upstre
         ┌───────────────────────────────────────────────┐
         │                 amortize                      │
         │                                               │
-        │  ① LIGHTEN   every run          [TODO layer1] │
+        │  ① LIGHTEN   every run              [ACTIVE]  │
         │     • tool schemas → compact stubs +          │
         │       a synthetic search_tools tool           │
         │     • oversized tool results spill to disk,   │
         │       model gets a handle + preview           │
         │                                               │
-        │  ② AMORTIZE  repeat runs        [TODO layer2] │
+        │  ② AMORTIZE  repeat runs            [ACTIVE]  │
         │     • record each run as a Case  ──────────►  │ ──► EverOS
         │     • distil repeats into a Skill (Markdown)  │     (memory)
         │     • replay the skill as code: 2 small LLM   │ ◄──
@@ -161,18 +162,25 @@ Runs one task — triage 30 support tickets with 8 tools — four times: direct 
 cold and re-prompted. Prints the 2×2 and writes `demo_report.json`.
 
 ```
-              amortize · ticket_triage · claude-haiku-4-5-20251001
-┌─────────────────┬─────────────────────────────┬─────────────────────────────┬──────────────┐
-│                 │        DIRECT (no Amortize) │            THROUGH AMORTIZE │             Δ│
-├─────────────────┼─────────────────────────────┼─────────────────────────────┼──────────────┤
-│First request    │ 29,403 tok · $0.033 · 126ms │ 29,403 tok · $0.033 · 129ms │            0%│
-│Re-prompt (same) │ 29,403 tok · $0.033 · 130ms │ 29,403 tok · $0.033 · 125ms │ 0% · parity ✓│
-└─────────────────┴─────────────────────────────┴─────────────────────────────┴──────────────┘
+              amortize · ticket_triage · deepseek/deepseek-v4-flash
+┌─────────────────┬─────────────────────┬─────────────────────┬────────────────┐
+│                 │ DIRECT (no Amortize)│    THROUGH AMORTIZE │               Δ│
+├─────────────────┼─────────────────────┼─────────────────────┼────────────────┤
+│First request    │ 48,703 tok · $0.008 │ 34,975 tok · $0.006 │            -28%│
+│                 │             · 36.5s │             · 39.8s │                │
+│Re-prompt (same) │ 39,403 tok · $0.007 │ 1,099 tok · $0.0002 │ -97% · parity ✓│
+│                 │             · 33.5s │              · 7.3s │                │
+└─────────────────┴─────────────────────┴─────────────────────┴────────────────┘
 ```
 
+*(A real run, live on Novita, 2026-08-07 — ledger `snowflake`, memory `everos`, all four cells
+`simulated: false`. Run-to-run trajectory noise moves the cold Δ by roughly ±10 points; the warm
+row is deterministic code and stays put.)*
+
 **The Δ column is computed, never asserted** — the harness measures both lanes and prints whatever
-the ledger recorded, `0%` included. When an optimizer layer lands, the same command produces the
-real table with no changes to the harness.
+the ledger recorded, `0%` included. Row 1 is Layer 1 (schema dieting + result spill, same output —
+parity is field-exact). Row 2 is Layer 2: the repeat replays the verified skill as code with two
+small LLM calls, then the grader proves the output identical.
 
 Live runs drive **Novita** (OpenAI-compatible; set `NOVITA_API_KEY` and optionally `NOVITA_MODEL`
 in `.env`). Without a key the demo runs offline: a scripted agent calls the same 8 tools and token
@@ -316,8 +324,8 @@ amort/
 │   └── interceptors.py     Layer 1/2 seams — pass-through today
 ├── skills/
 │   ├── recorder.py         trajectory → Case
-│   ├── compiler.py         Case → Skill            [TODO layer2]
-│   ├── replayer.py         Skill → warm execution  [TODO layer2]
+│   ├── compiler.py         Case → Skill            [ACTIVE]
+│   ├── replayer.py         Skill → warm execution  [ACTIVE]
 │   ├── grader.py           parity + accuracy grading
 │   └── store_everos.py     EverOS adapter, local-first
 ├── ledger/
@@ -348,20 +356,20 @@ the real Anthropic wire format, which is also what makes "byte-identical output"
 
 ---
 
-## What is not built yet
+## Honest edges
 
 Named plainly so nobody demos this build believing otherwise:
 
-* **Layer 1 (LIGHTEN)** — merged and measured, but **only on the narrow gate** in `CONTRACTS.md`:
-  non-streaming, OpenAI-format requests carrying more than `AMORT_TOOL_STUB_THRESHOLD` tools.
-  Streaming requests and the Anthropic `/v1/messages` path still pass through byte-identical, so
-  Claude Code — which always streams — currently gets a transparent proxy and no dieting.
-* **Layer 2 (AMORTIZE)** — runs are recorded as Cases, but nothing distils them into Skills and
-  nothing is replayed. `amort demo`'s warm lane falls back to the full agent and says so.
+* **Layer 1 scopes to non-streaming OpenAI-format requests.** Streaming traffic (e.g. Claude Code)
+  passes through byte-identical and is measured, not lightened — SSE splicing is future work.
+* **PLAN REPLAY** (injecting a verified plan for clients whose tools we can't execute) is wired and
+  logs `meta.layer2`, but no savings number is claimed for it: on the procedure-locked demo prompt
+  there is no exploration to remove, and its exploration-arm benchmark isn't demo-grade yet.
+  FULL REPLAY (the −97% row) is the measured path.
+* **Cold-run Δ varies** ±~10 points run-to-run — that's upstream trajectory noise, and the table
+  prints whatever it measures. One fixture ticket (TKT-4116) is an occasional cold-model
+  transcription coin-flip; the warm path is deterministic code and immune.
 * **Speculative dispatch, auth/multi-tenancy, packaging.** Out of scope for this build.
-
-The parity grader, the ledger, the proxy, and the harness are real — which is the order that
-matters: you cannot honestly claim a saving before you can measure one.
 
 ## Contributing
 

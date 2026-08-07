@@ -106,9 +106,10 @@ def render(result: DemoResult) -> None:
             "token counts are estimated from the real payload size (chars/4), not API-reported."
         )
     lines.append(
-        "[bold]Both columns are equal on purpose.[/bold] Layer 1 (tool dieting, result spill) and "
-        "Layer 2 (skill distil + replay) are stubs in this build, so routing through Amortize "
-        "changes nothing yet. The harness measures rather than asserts, which is why it prints 0%."
+        "[bold]Every number above is measured, never asserted.[/bold] Row 1 is Layer 1 (LIGHTEN): "
+        "tool-schema dieting + result spill on a cold run — same output, fewer tokens. Row 2 is "
+        "Layer 2 (AMORTIZE): the repeat replays a verified skill as code with two small LLM calls. "
+        "If a layer saves nothing on a run, its Δ reads 0% — the harness has no other code path."
     )
     for key, parity in result.parity.items():
         lines.append(f"{key.replace('_', ' ')}: {parity.summary()}")

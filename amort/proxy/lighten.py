@@ -107,11 +107,12 @@ def build_stub_tool(catalog: list[dict[str, Any]]) -> dict[str, Any]:
         "are directly callable by name:\n"
         + "\n".join(lines)
         + "\n\nPREFER calling a listed tool directly — do not search first when its "
-        "params are flat and clear from context or your instructions. For tools "
-        "marked [structured params], and whenever you are unsure, call this to load "
-        "the full schema of any tool you need; you can request several at once (one "
-        f'query may name multiple tools, e.g. "{example}"). Matched tools are added '
-        "to your tool list."
+        "params are clear from the hint, context, or your instructions. Listed tools "
+        "behave exactly like fully-schema'd tools: you can call SEVERAL of them in "
+        "the same turn (parallel tool calls) — never spread batchable calls across "
+        "turns. Only when you are unsure of a schema, call this to load it; you can "
+        f'request several at once (one query may name multiple tools, e.g. "{example}"). '
+        "Matched tools are added to your tool list."
     )
     return {
         "type": "function",
@@ -268,17 +269,23 @@ def spill_result(content: str) -> str:
         path.write_text(_prettify(content), encoding="utf-8")
 
     stored = path.read_text(encoding="utf-8")
-    ids = list(dict.fromkeys(_ID_PATTERN.findall(content)))
     records = _short_records(content)
-    records_section = f"--- all records, long fields omitted ---\n{records}\n" if records else ""
+    if records:
+        # The digest carries EVERY scalar field of EVERY record — head/tail
+        # previews and id lists would only duplicate it at ~1k tokens a turn.
+        detail = f"--- all records, every scalar field (long text omitted) ---\n{records}\n"
+    else:
+        ids = list(dict.fromkeys(_ID_PATTERN.findall(content)))
+        detail = (
+            f"--- head ---\n{stored[:_PREVIEW_CHARS]}\n"
+            f"--- tail ---\n{stored[-_PREVIEW_CHARS:]}\n"
+            + (f"--- complete id list ---\n{' '.join(ids)}\n" if ids else "")
+        )
     return (
         f"[{SPILL_MARKER}:{handle}] Large result ({len(content):,} chars, "
         f"~{len(content) // 4:,} tokens) stored out of context.\n"
-        f"--- head ---\n{stored[:_PREVIEW_CHARS]}\n"
-        f"--- tail ---\n{stored[-_PREVIEW_CHARS:]}\n"
-        f"{records_section}"
-        f"--- complete id list ---\n{' '.join(ids)}\n"
-        f'Only the long fields are missing above. If you need one, prefer a single '
+        f"{detail}"
+        f"Only long text fields are missing above. If you need one, prefer a single "
         f'{READ_SPILL_TOOL_NAME}(handle="{handle}", mode="grep", arg="field_a|field_b") '
         "call over paging with head/tail."
     )

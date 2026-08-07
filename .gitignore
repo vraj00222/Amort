@@ -28,3 +28,6 @@ demo_report.json
 # macos
 .DS_Store
 vendor/
+
+# claude worktrees / session state
+.claude/

@@ -168,14 +168,14 @@ class RunRecorder:
         )
 
     def replay_step(self, skill_id: str, *, wall_ms: int = 0, **meta: Any) -> RecordedStep:
-        """TODO(layer2): emitted by `replayer.py` for each replayed skill step."""
+        """One replayed-skill marker step (the harness's warm-lane bookkeeping)."""
         self.skill_id = skill_id
         return self.add(
             RecordedStep(step_idx=0, kind="replay", name=f"skill:{skill_id}", wall_ms=wall_ms, meta=meta)
         )
 
     def grade_step(self, verdict: str, *, wall_ms: int = 0, **meta: Any) -> RecordedStep:
-        """TODO(layer2): emitted by `grader.py` — warm output vs cold output."""
+        """One parity-grade marker step — warm output vs cold output."""
         self.parity = verdict
         return self.add(
             RecordedStep(step_idx=0, kind="grade", name=f"grade:{verdict}", wall_ms=wall_ms, meta=meta)
