@@ -29,6 +29,8 @@ echo "[smoke_claude_code]";  uv run python scripts/smoke_claude_code.py
 echo "[smoke_ledger]";       uv run python scripts/smoke_ledger.py
 
 if [ "$LEVEL" -ge 1 ]; then
+  echo "[test_lighten]"
+  uv run python scripts/test_lighten.py
   echo "[accept_layer1 unit]"
   uv run python scripts/accept_layer1.py
 fi

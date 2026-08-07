@@ -64,10 +64,31 @@ def _param_hint(fn: dict[str, Any]) -> str:
         for p in props.values()
     )
     if nested:
-        return " [structured params — load the schema first]"
+        # A names-only sketch of the nesting: enough shape to call directly
+        # (the one discovery round-trip it avoids costs more than every stub
+        # line combined — measured on the demo task), still no descriptions,
+        # enums, or constraints.
+        return " [params: " + ", ".join(
+            _sketch(k, p, k in required) for k, p in props.items()
+        ) + "]"
     if not props:
         return ""
     return " [params: " + ", ".join(k if k in required else f"{k}?" for k in props) + "]"
+
+
+def _sketch(name: str, prop: dict[str, Any], required: bool) -> str:
+    """`assignments(list of {ticket_id, queue, priority})` — key names only."""
+    label = name if required else f"{name}?"
+    if not isinstance(prop, dict):
+        return label
+    if prop.get("type") == "object" and prop.get("properties"):
+        return f"{label}({{{', '.join(prop['properties'])}}})"
+    items = prop.get("items")
+    if prop.get("type") == "array" and isinstance(items, dict):
+        if items.get("type") == "object" and items.get("properties"):
+            return f"{label}(list of {{{', '.join(items['properties'])}}})"
+        return f"{label}(list)"
+    return label
 
 
 def build_stub_tool(catalog: list[dict[str, Any]]) -> dict[str, Any]:
@@ -207,7 +228,9 @@ def _short_records(content: str) -> str:
         parts = []
         for key, value in item.items():
             rendered = json.dumps(value, default=str)
-            if len(rendered) <= 20:
+            # 26 keeps quoted ISO-8601 timestamps (22 chars) — dropping those
+            # forces the model to page the spill for date-dependent fields.
+            if len(rendered) <= 26:
                 parts.append(f"{key}={rendered}")
         lines.append(" ".join(parts))
     out = "\n".join(lines)
