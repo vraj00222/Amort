@@ -1,0 +1,137 @@
+{
+  "task": "ticket_triage",
+  "model": "deepseek/deepseek-v4-flash",
+  "started_at": "2026-08-07T21:09:42.124774+00:00",
+  "live": true,
+  "simulated": false,
+  "simulated_note": null,
+  "layers": {
+    "lighten": "stub (TODO layer1)",
+    "amortize": "stub (TODO layer2)",
+    "prove": "active"
+  },
+  "backends": {
+    "ledger": "snowflake",
+    "memory": "everos",
+    "proxy": "http://127.0.0.1:4000"
+  },
+  "runs": {
+    "A_cold": {
+      "lane": "baseline",
+      "mode": "cold",
+      "run_id": "run_1927b439818940ae",
+      "input_tokens": 40820,
+      "output_tokens": 5378,
+      "total_tokens": 46198,
+      "cost_usd": 0.007679,
+      "wall_ms": 31180,
+      "llm_calls": 5,
+      "tool_calls": 4,
+      "output_hash": "df7a3ebd845bd8c404fac634135346bf",
+      "simulated": false,
+      "ok": true,
+      "error": null,
+      "skill_id": null,
+      "replay_fallback": null
+    },
+    "B_cold": {
+      "lane": "amortize",
+      "mode": "cold",
+      "run_id": "run_a0885c0086a94f6f",
+      "input_tokens": 33159,
+      "output_tokens": 7359,
+      "total_tokens": 40518,
+      "cost_usd": 0.00686,
+      "wall_ms": 43037,
+      "llm_calls": 4,
+      "tool_calls": 4,
+      "output_hash": "df7a3ebd845bd8c404fac634135346bf",
+      "simulated": false,
+      "ok": true,
+      "error": null,
+      "skill_id": null,
+      "replay_fallback": null
+    },
+    "A_warm": {
+      "lane": "baseline",
+      "mode": "warm",
+      "run_id": "run_1e3889cba41d4199",
+      "input_tokens": 41609,
+      "output_tokens": 5380,
+      "total_tokens": 46989,
+      "cost_usd": 0.007801,
+      "wall_ms": 32401,
+      "llm_calls": 5,
+      "tool_calls": 4,
+      "output_hash": "df7a3ebd845bd8c404fac634135346bf",
+      "simulated": false,
+      "ok": true,
+      "error": null,
+      "skill_id": null,
+      "replay_fallback": null
+    },
+    "B_warm": {
+      "lane": "amortize",
+      "mode": "warm",
+      "run_id": "run_5a52f3a568194220",
+      "input_tokens": 781,
+      "output_tokens": 65,
+      "total_tokens": 846,
+      "cost_usd": 0.000128,
+      "wall_ms": 4104,
+      "llm_calls": 2,
+      "tool_calls": 4,
+      "output_hash": "df7a3ebd845bd8c404fac634135346bf",
+      "simulated": false,
+      "ok": true,
+      "error": null,
+      "skill_id": "skl_790ab652c2c2",
+      "replay_fallback": null
+    }
+  },
+  "deltas": {
+    "cold_tokens_pct": -12.29,
+    "cold_cost_pct": -10.67,
+    "warm_tokens_pct": -98.2,
+    "warm_cost_pct": -98.36
+  },
+  "parity": {
+    "A_cold_vs_B_cold": {
+      "verdict": "match",
+      "compared": 120,
+      "mismatches": [],
+      "reason": ""
+    },
+    "B_cold_vs_B_warm": {
+      "verdict": "match",
+      "compared": 120,
+      "mismatches": [],
+      "reason": ""
+    }
+  },
+  "accuracy": {
+    "A_cold": {
+      "verdict": "match",
+      "compared": 120,
+      "mismatches": []
+    },
+    "B_cold": {
+      "verdict": "match",
+      "compared": 120,
+      "mismatches": []
+    },
+    "A_warm": {
+      "verdict": "match",
+      "compared": 120,
+      "mismatches": []
+    },
+    "B_warm": {
+      "verdict": "match",
+      "compared": 120,
+      "mismatches": []
+    }
+  },
+  "notes": [
+    "compiled skill skl_790ab652c2c2 (status=verified) from the two cold runs"
+  ]
+}

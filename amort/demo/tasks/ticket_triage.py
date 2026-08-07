@@ -668,6 +668,7 @@ def run_live(
     max_turns: int = 12,
     recorder: RunRecorder | None = None,
     system: str | None = None,
+    user_msg: str | None = None,
 ) -> tuple[dict[str, Any], RunRecorder]:
     """Drive the task against an OpenAI-compatible upstream (Novita).
 
@@ -683,14 +684,15 @@ def run_live(
     from openai import OpenAI
 
     sys_prompt = system or SYSTEM
+    prompt = user_msg or TASK_PROMPT
     rec = recorder or RunRecorder(
-        lane=lane, mode=mode, system=sys_prompt, user_msg=TASK_PROMPT,
+        lane=lane, mode=mode, system=sys_prompt, user_msg=prompt,
         tool_names=TOOL_NAMES, model=model,
     )
     client = OpenAI(api_key=api_key, base_url=base_url, max_retries=2, timeout=600.0)
     messages: list[dict[str, Any]] = [
         {"role": "system", "content": sys_prompt},
-        {"role": "user", "content": TASK_PROMPT},
+        {"role": "user", "content": prompt},
     ]
     final_text = ""
 

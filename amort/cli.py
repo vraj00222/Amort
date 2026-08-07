@@ -318,6 +318,29 @@ def dash(
     raise typer.Exit(subprocess.call(cmd))
 
 
+@app.command()
+def playground(
+    port: Annotated[int, typer.Option(help="Playground port.")] = 4700,
+) -> None:
+    """The one-page live demo: one prompt, two lanes (direct vs Amortize), real numbers."""
+    import httpx
+
+    from amort.config import get_settings
+
+    settings = get_settings()
+    try:
+        httpx.get(f"{settings.proxy_base_url}/health", timeout=3)
+    except Exception:  # noqa: BLE001
+        console.print(
+            f"[yellow]warning:[/yellow] no proxy at {settings.proxy_base_url} — the right "
+            "lane needs it. Start `amort up` in another terminal."
+        )
+    console.print(f"[cyan]amortize playground[/cyan] → http://127.0.0.1:{port}")
+    from amort.demo.playground import serve
+
+    serve(port=port)
+
+
 @app.command(name="snowflake-init")
 def snowflake_init(
     sql: Annotated[str, typer.Option(help="Path to the DDL file.")] = "",

@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>amortize — live playground</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg:#0b0e14; --panel:#11141c; --line:#232838; --label:#6b7385; --dim:#c6cbd9;
+    --accent:#23d57c; --blue:#4f8ff7; --bad:#ff5d5d; --purple:#a78bfa; --snow:#29b5e8;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--dim); font:400 2vh/1.45 "SF Mono", ui-monospace, Menlo, monospace;
+         min-height:100vh; display:flex; flex-direction:column; padding:2.4vh 2.4vw; gap:1.6vh; }
+  h1 { font-size:3.2vh; color:#fff; letter-spacing:.02em; }
+  h1 em { color:var(--accent); font-style:normal; }
+  .sub { color:var(--label); font-size:1.9vh; }
+
+  .promptrow { display:flex; gap:1vw; }
+  #prompt { flex:1; background:var(--panel); color:#fff; border:1px solid var(--line); border-radius:10px;
+            padding:1.6vh 1.2vw; font:inherit; font-size:2vh; }
+  #prompt:focus { outline:none; border-color:var(--accent); }
+  #runbtn { background:var(--accent); color:#06130c; font:700 2.1vh/1 inherit; border:0; border-radius:10px;
+            padding:0 2.4vw; cursor:pointer; letter-spacing:.06em; }
+  #runbtn:disabled { background:var(--line); color:var(--label); cursor:wait; }
+
+  .lanes { display:grid; grid-template-columns:1fr 1fr; gap:1.4vw; flex:1; min-height:34vh; }
+  .lane { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:2vh 1.4vw;
+          display:flex; flex-direction:column; gap:1vh; }
+  .lane.running { border-color:var(--blue); }
+  .lane.warm    { border-color:var(--purple); }
+  .lane h2 { font-size:2vh; letter-spacing:.1em; color:#fff; }
+  .lane h2 small { display:block; color:var(--label); font-weight:400; font-size:1.5vh; letter-spacing:.04em; }
+  .meters { display:flex; gap:2vw; align-items:baseline; }
+  .meters .big { font-size:4.6vh; font-weight:800; color:#fff; }
+  .meters .unit { color:var(--label); font-size:1.6vh; }
+  .lane .usd { color:var(--accent); font-size:2.4vh; font-weight:700; }
+  .lane .clock { color:var(--label); }
+  .ticker { color:var(--label); font-size:1.6vh; min-height:2.2vh; white-space:nowrap; overflow:hidden;
+            text-overflow:ellipsis; }
+  .ticker b { color:var(--dim); }
+  .modebadge { align-self:flex-start; font-size:1.4vh; letter-spacing:.12em; color:var(--label);
+               border:1px solid var(--line); border-radius:6px; padding:.3vh .6vw; }
+  .lane.warm .modebadge { color:var(--purple); border-color:var(--purple); }
+
+  #verdict { text-align:center; font-size:3vh; min-height:4vh; }
+  #verdict .pct { font-weight:800; color:var(--accent); font-size:4vh; }
+  #verdict .pct.bad { color:var(--bad); }
+  #verdict .par { margin-left:1.2vw; color:var(--accent); }
+  #verdict .par.bad { color:var(--bad); }
+
+  .features { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1.4vw; }
+  .feat { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:1.6vh 1.2vw; }
+  .feat h3 { font-size:1.8vh; letter-spacing:.1em; margin-bottom:.6vh; }
+  .feat p { color:var(--label); font-size:1.6vh; }
+  .feat .live { float:right; font-size:1.3vh; color:var(--accent); opacity:0; transition:opacity .3s; }
+  .feat.on .live { opacity:1; }
+  #f-lighten h3 { color:var(--blue); } #f-amortize h3 { color:var(--purple); } #f-prove h3 { color:var(--snow); }
+
+  #powerbar { display:flex; justify-content:space-between; align-items:center; gap:2vw;
+              border-top:1px solid var(--line); padding-top:1.2vh; font-size:1.7vh; }
+  .plbl { color:var(--label); letter-spacing:.14em; font-size:1.4vh; text-transform:uppercase; }
+  .sponsors { display:flex; align-items:baseline; gap:1.4vw; }
+  .sp { font-weight:800; letter-spacing:.06em; color:var(--dim); padding:.3vh .7vw; border-radius:6px;
+        border:1px solid var(--line); transition:box-shadow .25s, color .25s, border-color .25s; white-space:nowrap; }
+  .sp .spsub { display:block; font-weight:500; font-size:1.2vh; letter-spacing:.12em; color:var(--label);
+               text-transform:uppercase; }
+  .sp.pulse { color:#fff; }
+  #sp-novita.pulse { border-color:var(--accent); box-shadow:0 0 14px rgba(35,213,124,.55); }
+  #sp-everos.pulse { border-color:var(--purple); box-shadow:0 0 14px rgba(167,139,250,.55); }
+  #sp-snowflake.pulse { border-color:var(--snow); box-shadow:0 0 14px rgba(41,181,232,.55); }
+  .membox { display:flex; align-items:center; gap:1vw; min-width:0; flex:1; justify-content:flex-end; }
+  #memgraph { display:flex; align-items:center; gap:.5vw; overflow:hidden; }
+  .mnode { width:1.5vh; height:1.5vh; border-radius:50%; background:rgba(167,139,250,.35);
+           border:1px solid var(--purple); transition:transform .3s, box-shadow .3s; flex:0 0 auto;
+           animation:mgrow .45s ease-out; }
+  .mnode.skill { width:2.1vh; height:2.1vh; border-radius:4px; transform:rotate(45deg);
+                 background:rgba(167,139,250,.55); }
+  .mnode.hit { box-shadow:0 0 16px rgba(167,139,250,.95); background:var(--purple); animation:mpulse .9s ease-out; }
+  .memnote { color:var(--label); font-size:1.5vh; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+             max-width:24vw; }
+  @keyframes mgrow { from { transform:scale(0);} to { transform:scale(1);} }
+  @keyframes mpulse { 0% { box-shadow:0 0 0 0 rgba(167,139,250,.9);} 100% { box-shadow:0 0 0 2.2vh rgba(167,139,250,0);} }
+  #conn { position:fixed; right:1vw; bottom:.6vh; color:var(--label); font-size:1.3vh; }
+</style>
+</head>
+<body>
+
+<h1>amortize <em>· same prompt, two paths, real numbers</em></h1>
+<div class="sub">One environment variable turns the left lane into the right lane. Every figure below is measured live on Novita — nothing is scripted or asserted.</div>
+
+<div class="promptrow">
+  <input id="prompt" value="Triage all support tickets from the last 7 days, any status: classify them, check every ticket against its SLA, and assign each one to the right queue with a priority. Flag which ones need a drafted first response." />
+  <button id="runbtn">RUN BOTH</button>
+</div>
+
+<div class="lanes">
+  <div class="lane" id="lane-baseline">
+    <span class="modebadge" data-m="mode">DIRECT</span>
+    <h2>WITHOUT AMORTIZE<small>your agent → Novita · full tool catalogue resent every turn</small></h2>
+    <div class="meters"><span class="big" data-m="tok">0</span><span class="unit">tokens</span>
+      <span class="usd" data-m="usd">$0.0000</span><span class="clock" data-m="clock"></span></div>
+    <div class="ticker" data-m="ticker">idle</div>
+  </div>
+  <div class="lane" id="lane-amortize">
+    <span class="modebadge" data-m="mode">THROUGH AMORTIZE</span>
+    <h2>WITH AMORTIZE<small>your agent → proxy :4000 → Novita · lightened, remembered, replayed</small></h2>
+    <div class="meters"><span class="big" data-m="tok">0</span><span class="unit">tokens</span>
+      <span class="usd" data-m="usd">$0.0000</span><span class="clock" data-m="clock"></span></div>
+    <div class="ticker" data-m="ticker">idle</div>
+  </div>
+</div>
+
+<div id="verdict"></div>
+
+<div class="features">
+  <div class="feat" id="f-lighten"><span class="live">● ACTIVE NOW</span><h3>① LIGHTEN — every prompt</h3>
+    <p>The proxy strips the 8 verbose tool schemas to one-line stubs; the model pulls a full schema only
+    when it needs one, and oversized tool results spill to disk with a readable digest. Fewer tokens in,
+    the same answer out — the parity check proves it.</p></div>
+  <div class="feat" id="f-amortize"><span class="live">● ACTIVE NOW</span><h3>② AMORTIZE — repeat prompts</h3>
+    <p>Every run is remembered as a Case in EverOS. Two runs that agree field-exactly distil into a verified
+    Skill. Repeat the prompt and the right lane replays that skill as code — two small model calls instead
+    of a whole agent loop. Any guard failure falls back to the full agent.</p></div>
+  <div class="feat" id="f-prove"><span class="live">● ACTIVE NOW</span><h3>③ PROVE — always on</h3>
+    <p>Every model call, tool call and replay lands as a row in the Snowflake ledger; a field-exact grader
+    compares both lanes' outputs. If a number is not measured, it is not on this screen.</p></div>
+</div>
+
+<div id="powerbar">
+  <div class="sponsors">
+    <span class="plbl">powered by</span>
+    <span class="sp" id="sp-novita">NOVITA<span class="spsub">inference</span></span>
+    <span class="sp" id="sp-everos">EverOS<span class="spsub">memory</span></span>
+    <span class="sp" id="sp-snowflake">❄ SNOWFLAKE<span class="spsub">ledger</span></span>
+  </div>
+  <div class="membox">
+    <span class="plbl" id="memlbl">memory</span>
+    <div id="memgraph"></div>
+    <span class="memnote" id="memnote"></span>
+  </div>
+</div>
+<div id="conn">connecting…</div>
+
+<script>
+  var lanes = {};
+  ["baseline", "amortize"].forEach(function (name) {
+    var el = document.getElementById("lane-" + name);
+    function m(k) { return el.querySelector('[data-m="' + k + '"]'); }
+    lanes[name] = { el: el, tok: m("tok"), usd: m("usd"), clock: m("clock"),
+                    ticker: m("ticker"), mode: m("mode"), t0: 0, totTok: 0, totUsd: 0, timer: null };
+  });
+  function fmt(n) { return (n || 0).toLocaleString("en-US"); }
+  function pulse(id) {
+    var el = document.getElementById(id); if (!el) return;
+    el.classList.remove("pulse"); void el.offsetWidth; el.classList.add("pulse");
+    clearTimeout(el._pt); el._pt = setTimeout(function () { el.classList.remove("pulse"); }, 900);
+  }
+  function featOn(id) {
+    var el = document.getElementById(id); if (!el) return;
+    el.classList.add("on"); clearTimeout(el._ft);
+    el._ft = setTimeout(function () { el.classList.remove("on"); }, 2500);
+  }
+  var memNodes = {};
+  function memoryEvent(ev) {
+    pulse("sp-everos"); featOn("f-amortize");
+    var g = document.getElementById("memgraph");
+    var node = memNodes[ev.node];
+    if (!node) {
+      node = document.createElement("div"); node.className = "mnode"; node.title = ev.node;
+      memNodes[ev.node] = node; g.appendChild(node);
+    }
+    if (ev.op === "skill" || (ev.op === "hit" && String(ev.node).indexOf("skl") === 0)) node.classList.add("skill");
+    if (ev.op === "hit") { node.classList.remove("hit"); void node.offsetWidth; node.classList.add("hit"); }
+    document.getElementById("memnote").textContent = ev.label || "";
+    var n = Object.keys(memNodes).length;
+    document.getElementById("memlbl").textContent = "memory · " + n + " node" + (n === 1 ? "" : "s");
+  }
+  function startClock(L) {
+    L.t0 = Date.now();
+    L.timer = setInterval(function () {
+      L.clock.textContent = ((Date.now() - L.t0) / 1000).toFixed(1) + "s";
+    }, 100);
+  }
+  function stopClock(L) { if (L.timer) { clearInterval(L.timer); L.timer = null; } }
+
+  function onEvent(ev) {
+    if (ev.type === "memory") return memoryEvent(ev);
+    var L = ev.lane ? lanes[ev.lane] : null;
+
+    if (ev.type === "prompt") {
+      document.getElementById("verdict").innerHTML = "";
+      ["baseline", "amortize"].forEach(function (n) {
+        var x = lanes[n]; x.totTok = 0; x.totUsd = 0;
+        x.tok.textContent = "0"; x.usd.textContent = "$0.0000";
+        x.ticker.textContent = "waiting…"; x.clock.textContent = "";
+        x.el.classList.remove("running", "warm");
+      });
+    } else if (ev.type === "run_start" && L) {
+      L.el.classList.add("running");
+      if (ev.mode === "warm") { L.el.classList.add("warm"); L.mode.textContent = "WARM · SKILL REPLAY"; }
+      else if (ev.lane === "amortize") { L.mode.textContent = "THROUGH AMORTIZE · COLD"; }
+      L.ticker.innerHTML = "<b>run started</b>";
+      startClock(L);
+    } else if (ev.type === "step" && L) {
+      if (ev.kind === "llm") { pulse("sp-novita"); if (ev.lane === "amortize") featOn("f-lighten"); }
+      if (typeof ev.tokens === "number") { L.totTok += ev.tokens; L.totUsd += (ev.cost_usd || 0); }
+      L.tok.textContent = fmt(L.totTok);
+      L.usd.textContent = "$" + L.totUsd.toFixed(4);
+      L.ticker.innerHTML = "<b>" + ev.kind + "</b> " + (ev.name || "") +
+        (typeof ev.tokens === "number" ? " · +" + fmt(ev.tokens) + " tok" : "");
+    } else if (ev.type === "run_end" && L) {
+      stopClock(L);
+      pulse("sp-snowflake"); featOn("f-prove");
+      L.el.classList.remove("running");
+      if (typeof ev.tokens === "number") { L.totTok = ev.tokens; L.tok.textContent = fmt(ev.tokens); }
+      if (typeof ev.cost_usd === "number") { L.totUsd = ev.cost_usd; L.usd.textContent = "$" + ev.cost_usd.toFixed(4); }
+      if (typeof ev.wall_ms === "number") L.clock.textContent = (ev.wall_ms / 1000).toFixed(1) + "s";
+      L.ticker.innerHTML = ev.ok === false
+        ? "<b style='color:var(--bad)'>failed</b> " + (ev.error || "")
+        : "<b>complete</b> · " + (ev.llm_calls || 0) + " model / " + (ev.tool_calls || 0) + " tool calls";
+    } else if (ev.type === "delta") {
+      var pct = ev.tokens_pct, good = typeof pct === "number" && pct < 0;
+      var par = ev.parity === "match";
+      document.getElementById("verdict").innerHTML =
+        '<span class="pct' + (good ? "" : " bad") + '">' + (pct > 0 ? "+" : "") + pct + "% tokens</span>" +
+        '<span class="par' + (par ? "" : " bad") + '">' +
+        (par ? "output verified identical ✓" : (ev.parity === "n/a" ? "outputs not comparable" : "outputs differ ✗")) +
+        "</span>";
+      document.getElementById("runbtn").disabled = false;
+    }
+  }
+
+  var runbtn = document.getElementById("runbtn");
+  runbtn.addEventListener("click", function () {
+    var prompt = document.getElementById("prompt").value.trim();
+    if (!prompt) return;
+    runbtn.disabled = true;
+    fetch("/run", { method: "POST", headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ prompt: prompt }) })
+      .then(function (r) { if (!r.ok) runbtn.disabled = false; })
+      .catch(function () { runbtn.disabled = false; });
+  });
+  document.getElementById("prompt").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") runbtn.click();
+  });
+
+  var es = new EventSource("/events");
+  es.onopen = function () { document.getElementById("conn").textContent = "live"; };
+  es.onerror = function () { document.getElementById("conn").textContent = "reconnecting…"; };
+  es.onmessage = function (msg) {
+    try { onEvent(JSON.parse(msg.data)); } catch (e) { /* ignore malformed */ }
+  };
+</script>
+</body>
+</html>
