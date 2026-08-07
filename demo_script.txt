@@ -1,0 +1,97 @@
+AMORTIZE — 3-MINUTE LIVE DEMO SCRIPT
+Speakers: VRAJ (0:00-1:00) · SAMEER (1:00-2:00) · ABHISHEK (2:00-2:55)
+Screen: playground on :4700. Hit RESET before starting. Dashboard tab (:8501) ready for Abhishek.
+Rule: say the numbers ON SCREEN. If a run measures differently, read the screen, not the script.
+
+────────────────────────────────────────────────────────────────────
+VRAJ — the problem, the company, Layer 1          [0:00 - 1:00]
+────────────────────────────────────────────────────────────────────
+
+[0:00 — face the room]
+"Hi, we are Amortize — vraj, sameer, abhishek. We are an AI B2B SaaS
+company. We help big tech companies go AI-native without the bill
+going crazy.
+
+Here is the real problem. Every AI agent a company runs is wasteful
+in the same two ways. One: on every single step, it re-sends the full
+list of tool definitions — thousands of tokens the model mostly never
+uses. Two: a thousand employees ask their agents the same things every
+day, and the company pays full price every single time.
+
+Amortize fixes both with one proxy. You change ONE environment
+variable — no code changes — and your agent traffic flows through us."
+
+[0:30 — type nothing, the prompt is prefilled. Click RUN BOTH.]
+"Watch live. Same prompt, two paths. Left: the agent straight to
+Novita, the normal way. Right: the same agent through Amortize.
+
+Layer 1 works on every prompt. At the proxy, we keep only the tool
+METADATA — one line per tool — and the model searches and selects the
+full tool definition only when it actually needs it. Big tool results
+get parked on disk with a short summary. That alone saves the context
+window and roughly 25 to 30 percent of tokens on a normal run — with
+the exact same answer. Sameer, the right lane."
+
+────────────────────────────────────────────────────────────────────
+SAMEER — Layer 2, the memory (EverOS)             [1:00 - 2:00]
+────────────────────────────────────────────────────────────────────
+
+[1:00 — point at the right lane, which is ALREADY FINISHED (~4-6s)]
+"Look at the right lane. It is already done. Four seconds, about a
+thousand tokens. The left lane is still working and will burn about
+forty-five thousand.
+
+Why? Layer 2 — memory. The proxy remembers the context of every
+prompt and every agent's steps, for every employee, in EverOS — our
+memory layer. See the purple badge blinking at the bottom? That is
+EverOS being read and written, live.
+
+When two runs of the same task agree exactly, we compress them into a
+verified Skill — a recipe. When any employee asks the same or a
+similar thing again, we do not run the whole agent again. The proxy
+fetches the recipe from memory and replays it as code, with just two
+small model calls: fill in the details, check the answer."
+
+[1:35 — left lane finishes; the verdict row appears. READ IT ALOUD.]
+"There it is, measured this run: about minus 97 percent tokens, minus
+97 percent cost, 35 seconds down to 4. And look — 'output identical'.
+[Click both OUTPUT panels open.] Same 30 tickets, field by field. A
+grader checks all 120 fields. We never trade quality for cost — if
+any safety check fails, it silently falls back to the full agent.
+Abhishek — prove it."
+
+────────────────────────────────────────────────────────────────────
+ABHISHEK — Layer 3, the proof (Snowflake) + close  [2:00 - 2:55]
+────────────────────────────────────────────────────────────────────
+
+[2:00 — switch to the dashboard tab]
+"Layer 3 is trust. Every model call, every tool call, every replay
+you just watched became a row in Snowflake — our ledger. Nothing on
+these screens can show a number that is not in the ledger.
+
+This chart is our name: the amortization curve. The brown line is the
+normal way — flat, you pay full price forever. The green line is
+Amortize — it bends toward zero as memory builds. And building a
+skill cost half a cent — it pays for itself inside the very first
+repeat."
+
+[2:30 — back to the room]
+"So: Layer 1 saves on every prompt with tool search at the proxy.
+Layer 2 makes repeated work almost free with EverOS memory. Layer 3
+proves every dollar in Snowflake.
+
+One environment variable. Any agent, any team, today. That is how a
+company goes AI-native — without paying for the same thinking twice.
+We are Amortize. Thank you."
+
+[2:50-2:55 — end]
+
+────────────────────────────────────────────────────────────────────
+SAFETY NET (do not read aloud)
+- Before the take: RESET on :4700. Run once off-camera first if you
+  want the dashboard curve fresh, then RESET again.
+- If wifi/Novita dies: uv run amort demo --offline --stage --replay
+  demo_report.json  → page at :4700/stage, labelled as a replay.
+- Numbers you may quote if asked: cold −26% cost (recorded run),
+  warm −97%, compile $0.0006, break-even 9% into first repeat,
+  parity 120/120 fields. Never quote a number not on screen.
