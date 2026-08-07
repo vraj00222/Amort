@@ -303,6 +303,14 @@ async def relay(
     if request.url.query:
         url = f"{url}?{request.url.query}"
     headers = prepare_headers(proxy_req.headers, provider, s)
+
+    if proxy_req.meta.get("layer1") and proxy_req.body is not None:
+        # Layer 1 armed this request (non-streaming by construction): run the
+        # proxy-side discovery loop instead of the single-shot path below.
+        return await _lighten_relay(
+            proxy_req, client=client, url=url, headers=headers, provider=provider
+        )
+
     started = time.perf_counter()
 
     upstream = client.build_request(
@@ -327,6 +335,177 @@ async def relay(
     if is_sse or wants_stream:
         return _streaming_response(response, proxy_req, started, provider)
     return await _buffered_response(response, proxy_req, started, provider)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Layer 1 — the proxy-side discovery loop (synthetic tools never reach the client)
+# ─────────────────────────────────────────────────────────────────────────────
+
+_LIGHTEN_MAX_CALLS = 6
+
+
+async def _upstream_json(
+    client: httpx.AsyncClient, method: str, url: str, headers: dict[str, str], content: bytes
+) -> httpx.Response:
+    """One buffered upstream call — the hoisted single-shot pattern, loop-sized."""
+    upstream = client.build_request(method, url, headers=headers, content=content)
+    response = await client.send(upstream, stream=True)
+    await response.aread()
+    await response.aclose()
+    return response
+
+
+async def _lighten_relay(
+    req: ProxyRequest,
+    *,
+    client: httpx.AsyncClient,
+    url: str,
+    headers: dict[str, str],
+    provider: Provider,
+) -> Response:
+    """Run the discovery loop; on cap / non-200 / any exception, one clean
+    re-send of the ORIGINAL raw body (full catalogue). Never fail the request."""
+    try:
+        return await _lighten_loop(req, client=client, url=url, headers=headers, provider=provider)
+    except Exception as exc:  # noqa: BLE001 — degrade to pass-through, never 500
+        logger.warning(
+            "layer1 loop abandoned (%s: %s) — re-sending the original request", type(exc).__name__, exc
+        )
+        stash = req.meta.get("layer1") or {}
+        stash["internal"] = False
+        stash["fallback"] = True
+
+    started = time.perf_counter()
+    upstream = client.build_request(req.method, url, headers=headers, content=req.raw_body)
+    try:
+        response = await client.send(upstream, stream=True)
+    except httpx.HTTPError as exc:
+        logger.warning("upstream request failed: %s", exc)
+        return JSONResponse(
+            status_code=502,
+            content={
+                "type": "error",
+                "error": {"type": "api_error", "message": f"amortize: upstream unreachable: {exc}"},
+            },
+        )
+    return await _buffered_response(response, req, started, provider)
+
+
+async def _lighten_loop(
+    req: ProxyRequest,
+    *,
+    client: httpx.AsyncClient,
+    url: str,
+    headers: dict[str, str],
+    provider: Provider,
+) -> Response:
+    from amort.proxy import lighten
+
+    stash: dict[str, Any] = req.meta["layer1"]
+    catalog: list[dict[str, Any]] = stash.get("catalog") or []
+    body: dict[str, Any] = req.body or {}
+    active = {
+        str((t.get("function") or {}).get("name", ""))
+        for t in body.get("tools") or []
+        if isinstance(t, dict)
+    }
+    total_prompt = total_completion = 0
+
+    for _ in range(_LIGHTEN_MAX_CALLS):
+        # Honest counter: what this iteration actually carries, stub text included.
+        stash["schema_tokens_after"] = len(json.dumps(body.get("tools") or [])) // 4
+        started = time.perf_counter()
+        response = await _upstream_json(client, req.method, url, headers, json.dumps(body).encode())
+        if response.status_code != 200:
+            raise RuntimeError(f"upstream {response.status_code} mid-loop")
+        parsed = json.loads(response.content)
+        tap = usage_from_json(provider, parsed)
+        total_prompt += tap.input_tokens
+        total_completion += tap.output_tokens
+
+        message = ((parsed.get("choices") or [{}])[0].get("message")) or {}
+        calls = message.get("tool_calls") or []
+        synthetic = [
+            c
+            for c in calls
+            if ((c.get("function") or {}).get("name")) in lighten.SYNTHETIC_TOOL_NAMES
+        ]
+
+        stash["internal"] = bool(synthetic)
+        _finish(req, tap, response.status_code, dict(response.headers), started, streamed=False)
+
+        if not synthetic:
+            # Final. Usage honesty: the client's recorder must see the true
+            # total across every iteration. content-length is already stripped,
+            # so the size change is safe.
+            usage = parsed.setdefault("usage", {})
+            usage["prompt_tokens"] = total_prompt
+            usage["completion_tokens"] = total_completion
+            usage["total_tokens"] = total_prompt + total_completion
+            return Response(
+                content=json.dumps(parsed).encode(),
+                status_code=response.status_code,
+                headers=response_headers(response.headers),
+                media_type=response.headers.get("content-type"),
+            )
+
+        # Splice an assistant message carrying ONLY the synthetic calls into the
+        # outbound copy. Real tool_calls in the same choice are dropped from the
+        # splice — the model re-issues them next iteration, once it has what it
+        # asked for — and so is any assistant content (interleaved reasoning text
+        # would be re-billed on every subsequent iteration). The client never
+        # sees any of this.
+        body.setdefault("messages", []).append(
+            {
+                "role": "assistant",
+                "content": "",
+                "tool_calls": [
+                    {
+                        "id": c.get("id"),
+                        "type": "function",
+                        "function": {
+                            "name": c["function"]["name"],
+                            "arguments": c["function"].get("arguments") or "{}",
+                        },
+                    }
+                    for c in synthetic
+                ],
+            }
+        )
+        for call in synthetic:
+            name = call["function"]["name"]
+            try:
+                args = json.loads(call["function"].get("arguments") or "{}")
+            except json.JSONDecodeError:
+                args = {}
+            if not isinstance(args, dict):
+                args = {}
+            if name == lighten.SEARCH_TOOL_NAME:
+                hits = lighten.resolve_search_tools(catalog, str(args.get("query", "")))
+                fresh = [t for t in hits if t["function"]["name"] not in active]
+                body["tools"].extend(fresh)
+                active.update(t["function"]["name"] for t in fresh)
+                loaded = [t["function"]["name"] for t in hits]
+                result = (
+                    "Loaded full schemas into your tool list: "
+                    + ", ".join(loaded)
+                    + ". Continue the task by calling tools directly; do not search "
+                    "again unless you need a new capability."
+                    if loaded
+                    else "No tools matched that query. Available tools: "
+                    + ", ".join(str(t["function"].get("name", "")) for t in catalog)
+                )
+            else:
+                result = lighten.resolve_read_spill(
+                    str(args.get("handle", "")),
+                    str(args.get("mode", "head")),
+                    str(args.get("arg", "")),
+                )
+            body["messages"].append(
+                {"role": "tool", "tool_call_id": call.get("id"), "content": result}
+            )
+
+    raise RuntimeError(f"loop cap ({_LIGHTEN_MAX_CALLS}) exhausted")
 
 
 def _streaming_response(
@@ -428,6 +607,12 @@ def _finish(
                 "sse_events": resp.meta.get("sse_events"),
                 "client": req.meta.get("client"),
                 "agent_id": req.meta.get("agent_id"),
+                # Layer-1 counters only — the stashed catalogue never hits the ledger.
+                "layer1": (
+                    {k: v for k, v in layer1.items() if k != "catalog"}
+                    if (layer1 := req.meta.get("layer1"))
+                    else None
+                ),
             },
         )
     )
