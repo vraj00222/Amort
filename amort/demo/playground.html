@@ -23,6 +23,9 @@
   #runbtn { background:var(--accent); color:#06130c; font:700 2.1vh/1 inherit; border:0; border-radius:10px;
             padding:0 2.4vw; cursor:pointer; letter-spacing:.06em; }
   #runbtn:disabled { background:var(--line); color:var(--label); cursor:wait; }
+  #resetbtn { background:transparent; color:var(--label); font:600 1.7vh/1 inherit; border:1px solid var(--line);
+              border-radius:10px; padding:0 1.2vw; cursor:pointer; letter-spacing:.06em; }
+  #resetbtn:hover { color:var(--dim); border-color:var(--label); }
 
   .lanes { display:grid; grid-template-columns:1fr 1fr; gap:1.4vw; flex:1; min-height:34vh; }
   .lane { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:2vh 1.4vw;
@@ -112,6 +115,7 @@
 <div class="promptrow">
   <input id="prompt" value="Triage all support tickets from the last 7 days, any status: classify them, check every ticket against its SLA, and assign each one to the right queue with a priority. Flag which ones need a drafted first response." />
   <button id="runbtn">RUN BOTH</button>
+  <button id="resetbtn" title="zero the page for a fresh take — skills, memory and ledger rows are kept">RESET</button>
 </div>
 
 <div class="lanes">
@@ -319,6 +323,22 @@
   });
   document.getElementById("prompt").addEventListener("keydown", function (e) {
     if (e.key === "Enter") runbtn.click();
+  });
+  document.getElementById("resetbtn").addEventListener("click", function () {
+    fetch("/reset", { method: "POST" }).then(function (r) {
+      if (!r.ok) return;
+      onEvent({ type: "prompt" });                       // zero the lanes + verdict
+      memNodes = {};
+      document.getElementById("memgraph").innerHTML = "";
+      document.getElementById("memlbl").textContent = "memory";
+      document.getElementById("memnote").textContent = "";
+      ["f-lighten", "f-amortize", "f-prove"].forEach(function (id) {
+        var el = document.getElementById(id);
+        el.classList.remove("on");
+        el.querySelector('[data-f="act"]').textContent = "idle";
+      });
+      runbtn.disabled = false;
+    });
   });
 
   var es = new EventSource("/events");

@@ -246,6 +246,19 @@ def create_app() -> Any:
         return StreamingResponse(stage._sse(), media_type="text/event-stream",  # noqa: SLF001
                                  headers={"Cache-Control": "no-cache"})
 
+    @app.post("/reset")
+    async def reset() -> JSONResponse:
+        """Zero the page for a fresh take: clears the EVENT history only —
+        skills, cases, and ledger rows are untouched (nothing measured is lost,
+        the next run's warm path still fires)."""
+        if not _busy.acquire(blocking=False):
+            return JSONResponse({"ok": False, "error": "a run is in flight"}, status_code=409)
+        try:
+            stage.enable()
+        finally:
+            _busy.release()
+        return JSONResponse({"ok": True})
+
     @app.post("/run")
     async def run(payload: dict[str, Any]) -> JSONResponse:
         prompt = str(payload.get("prompt") or "").strip()
