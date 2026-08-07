@@ -143,9 +143,15 @@ def _run_once(
     )
     started = time.perf_counter()
     if live:
+        # The OpenAI SDK appends `/chat/completions` to base_url, so both lanes
+        # need the `/v1` suffix — lane B's lands on the proxy's
+        # `/v1/chat/completions` route, which relays to Novita.
         output, recorder = module.run_live(
             lane=lane, mode=mode, model=model,
-            base_url=proxy_url if lane == "amortize" else settings.amort_upstream_anthropic,
+            base_url=(
+                f"{proxy_url}/v1" if lane == "amortize"
+                else f"{settings.novita_api_url.rstrip('/')}/v1"
+            ),
             api_key=api_key, recorder=recorder,
         )
     else:
@@ -195,8 +201,10 @@ def run_demo(
 
     settings = get_settings()
     settings.ensure_dirs()
-    model = settings.amort_demo_model
-    api_key = settings.anthropic_api_key
+    # Live runs drive Novita (the working upstream); offline keeps the
+    # configured demo model for its labelled estimates.
+    model = settings.novita_model if live else settings.amort_demo_model
+    api_key = settings.novita_api_key
 
     from amort.ledger.events import active_backend
     from amort.skills.store_everos import get_store
@@ -204,8 +212,9 @@ def run_demo(
     notes: list[str] = []
     if live and not api_key:
         live = False
+        model = settings.amort_demo_model
         notes.append(
-            "No ANTHROPIC_API_KEY, so the demo ran offline: a scripted agent calls the same "
+            "No NOVITA_API_KEY, so the demo ran offline: a scripted agent calls the same "
             "8 tools and token counts are ESTIMATED from the real payload size (chars/4). "
             "Every number below is tagged simulated=true. Set the key and re-run for measured numbers."
         )

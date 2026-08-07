@@ -52,6 +52,18 @@ class Settings(BaseSettings):
     amort_upstream_anthropic: str = "https://api.anthropic.com"
     amort_upstream_openai: str = "https://api.openai.com"
 
+    # --- novita (the working demo upstream; OpenAI-compatible) ---------------
+    novita_api_url: str = "https://api.novita.ai/openai"
+    novita_api_key: str | None = None
+    novita_model: str = "deepseek/deepseek-v4-flash"
+    novita_embed_model: str = "baai/bge-m3"
+
+    # --- optimizer knobs -----------------------------------------------------
+    amort_lighten: bool = True
+    amort_tool_stub_threshold: int = 4
+    amort_spill_threshold: int = 1500  # tokens (chars/4 on the serialized result)
+    amort_inject_budget: int = 2000  # tokens, cap on an injected plan + schemas
+
     # --- amortize -----------------------------------------------------------
     amort_port: int = 4000
     amort_host: str = "127.0.0.1"
@@ -84,6 +96,7 @@ class Settings(BaseSettings):
     @field_validator(
         "anthropic_api_key",
         "openai_api_key",
+        "novita_api_key",
         "everos_api_key",
         "snowflake_account",
         "snowflake_user",

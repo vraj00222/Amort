@@ -15,8 +15,11 @@ This is the payload the demo measures. Three properties matter:
 
 Two execution paths share one tool implementation:
 
-    run_live()      drives a real model through the Anthropic SDK
+    run_live()      drives a real model through an OpenAI-compatible upstream (Novita)
     run_offline()   a scripted agent that calls the same tools in a fixed order
+
+(`run_live_anthropic` keeps the original Anthropic SDK loop intact; nothing in
+today's demo depends on it.)
 
 `run_offline` exists so the harness, the ledger, the 2x2 table and the grader can
 all be exercised without an API key. Its token counts are **estimated** from the
@@ -577,11 +580,142 @@ def run_offline(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Live agent — the real Anthropic SDK loop
+# Live agent — OpenAI-compatible loop (Novita is the working demo upstream)
 # ─────────────────────────────────────────────────────────────────────────────
+
+# The same 8 tools in OpenAI function-calling form. One schema source (TOOLS),
+# two wire formats — the demo must never triage against a different catalogue
+# than the one Layer 1 diets.
+TOOLS_OPENAI: list[dict[str, Any]] = [
+    {
+        "type": "function",
+        "function": {
+            "name": t["name"],
+            "description": t["description"],
+            "parameters": t["input_schema"],
+        },
+    }
+    for t in TOOLS
+]
 
 
 def run_live(
+    *,
+    lane: str,
+    mode: str,
+    model: str,
+    base_url: str | None,
+    api_key: str | None,
+    max_turns: int = 12,
+    recorder: RunRecorder | None = None,
+) -> tuple[dict[str, Any], RunRecorder]:
+    """Drive the task against an OpenAI-compatible upstream (Novita).
+
+    Same loop shape as `run_live_anthropic`, different wire format:
+    `tool_calls` carry JSON-*string* arguments, tool results are `role:"tool"`
+    messages, and usage lives on `prompt_tokens`/`completion_tokens`. Assistant
+    echoes are sanitized to `{role, content, tool_calls}` — deepseek via Novita
+    can return extra fields (`reasoning_content`) that 400 when echoed back.
+    """
+    from openai import OpenAI
+
+    rec = recorder or RunRecorder(
+        lane=lane, mode=mode, system=SYSTEM, user_msg=TASK_PROMPT,
+        tool_names=TOOL_NAMES, model=model,
+    )
+    client = OpenAI(api_key=api_key, base_url=base_url, max_retries=2, timeout=600.0)
+    messages: list[dict[str, Any]] = [
+        {"role": "system", "content": SYSTEM},
+        {"role": "user", "content": TASK_PROMPT},
+    ]
+    final_text = ""
+
+    for _turn in range(max_turns):
+        started = time.perf_counter()
+        response = client.chat.completions.create(
+            model=model, max_tokens=8192, temperature=0,
+            tools=TOOLS_OPENAI, messages=messages,
+        )
+        wall_ms = int((time.perf_counter() - started) * 1000)
+        usage = response.usage
+        input_tokens = int(getattr(usage, "prompt_tokens", 0) or 0) if usage else 0
+        output_tokens = int(getattr(usage, "completion_tokens", 0) or 0) if usage else 0
+        details = getattr(usage, "prompt_tokens_details", None) if usage else None
+        cache_read = int(getattr(details, "cached_tokens", 0) or 0) if details else 0
+        model_id = response.model or model
+        choice = response.choices[0]
+        step = rec.llm_step(
+            model_id,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            cost_usd=cost_usd(
+                model_id, input_tokens, output_tokens, cache_read_tokens=cache_read,
+            ),
+            wall_ms=wall_ms,
+            meta={"stop_reason": choice.finish_reason, "cache_read_tokens": cache_read},
+        )
+        emit(StepEvent(
+            run_id=rec.run_id, lane=rec.lane, mode=rec.mode,
+            task_fingerprint=rec.task_fingerprint, step_idx=step.step_idx, kind="llm",
+            name=model_id, model=model_id,
+            input_tokens=input_tokens, output_tokens=output_tokens,
+            cost_usd=step.cost_usd, wall_ms=wall_ms,
+            meta={"task": TASK_NAME, "stop_reason": choice.finish_reason,
+                  "cache_read_tokens": cache_read},
+        ))
+
+        tool_calls = choice.message.tool_calls or []
+        echo: dict[str, Any] = {"role": "assistant", "content": choice.message.content or ""}
+        if tool_calls:
+            echo["tool_calls"] = [
+                {"id": c.id, "type": "function",
+                 "function": {"name": c.function.name, "arguments": c.function.arguments}}
+                for c in tool_calls
+            ]
+        messages.append(echo)
+        if not tool_calls:
+            final_text = choice.message.content or ""
+            break
+
+        for call in tool_calls:
+            started = time.perf_counter()
+            try:
+                args = json.loads(call.function.arguments or "{}")
+            except json.JSONDecodeError:
+                args = {}
+            try:
+                output = execute_tool(call.function.name, args)
+                is_error = False
+            except Exception as exc:  # noqa: BLE001 — surface tool errors to the model
+                output, is_error = {"error": str(exc)}, True
+            wall_ms = int((time.perf_counter() - started) * 1000)
+            tstep = rec.tool_step(call.function.name, args=args, output=output, wall_ms=wall_ms)
+            emit(StepEvent(
+                run_id=rec.run_id, lane=rec.lane, mode=rec.mode,
+                task_fingerprint=rec.task_fingerprint, step_idx=tstep.step_idx, kind="tool",
+                name=call.function.name, wall_ms=wall_ms,
+                meta={"task": TASK_NAME, "is_error": is_error,
+                      "result_bytes": len(json.dumps(output, default=str))},
+            ))
+            messages.append({
+                "role": "tool", "tool_call_id": call.id,
+                "content": json.dumps(output, default=str),
+            })
+
+    report = parse_report(final_text)
+    if report is None:
+        rec.fail(f"model did not return a parseable JSON report (got {final_text[:200]!r})")
+        report = {"task": TASK_NAME, "error": "unparseable", "raw": final_text[:2000]}
+    rec.finish(final_output=report)
+    return report, rec
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Live agent — the Anthropic SDK loop (kept intact; today's demo does not use it)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def run_live_anthropic(
     *,
     lane: str,
     mode: str,
@@ -701,10 +835,12 @@ __all__ = [
     "TASK_PROMPT",
     "TICKETS",
     "TOOLS",
+    "TOOLS_OPENAI",
     "TOOL_NAMES",
     "execute_tool",
     "expected_report",
     "parse_report",
     "run_live",
+    "run_live_anthropic",
     "run_offline",
 ]

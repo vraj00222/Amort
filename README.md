@@ -323,6 +323,11 @@ Named plainly so nobody demos this build believing otherwise:
 The parity grader, the ledger, the proxy, and the harness are real — which is the order that
 matters: you cannot honestly claim a saving before you can measure one.
 
+## Contributing
+
+Start with [TEAM.md](TEAM.md) — where the build is, today's sprint board, and open
+tracks (pitch script, video demo, extra demo tasks, docs) you can claim.
+
 ## License
 
-Apache-2.0
+MIT (see [LICENSE](LICENSE))
