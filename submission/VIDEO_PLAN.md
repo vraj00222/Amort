@@ -1,80 +1,88 @@
 # Video plan
 
-Produce two cuts from the same truth-locked run:
+Create two cuts from one truth-locked live run:
 
-1. **Product cut:** 60–90 seconds, captioned, optimized for submission/social.
-2. **Demo backup:** 2:40–3:00, matching the live pitch sequence.
+1. **75-second product cut** for judges and social.
+2. **Three-minute demo backup** matching `PITCH_SCRIPT.md`.
 
-## Product cut — 75-second storyboard
+## 75-second storyboard
 
-| Time | Visual | Audio/caption |
+| Time | Visual | Voice/caption |
 |---:|---|---|
-| 0:00–0:05 | Repeated context blocks hit a rising token counter | “AI agents have amnesia. Your cloud bill does not.” |
-| 0:05–0:12 | One base URL routes an existing agent through Amortize | “One switch. No SDK swap. No agent rewrite.” |
-| 0:12–0:24 | Full eight-tool catalogue collapses into selective discovery | “LIGHTEN reveals only the context the model needs.” |
-| 0:24–0:38 | Same task runs again; Case cards combine into a verified Skill | “AMORTIZE turns successful repeats into guarded code.” |
-| 0:38–0:52 | Direct/Amortize race lands on final metrics and parity | Show only truth-locked percentages and field count |
-| 0:52–1:05 | Snowflake rows animate into dashboard totals | “Every token, dollar, and parity grade has a receipt.” |
-| 1:05–1:15 | Logo, final result, repo QR | “Compound intelligence. Not token bills.” |
+| 0:00–0:05 | Enterprise agent run repeats; cost counter resets | “Every agent run should get cheaper with experience.” |
+| 0:05–0:12 | One base URL routes the same agent through Amortize | “Amortize is the cost-control plane for enterprise AI agents.” |
+| 0:12–0:23 | Full tool catalogue collapses into on-demand discovery | “LIGHTEN removes context the model does not need.” |
+| 0:23–0:35 | Successful Cases become one verified Skill | “AMORTIZE turns repeated work into guarded execution.” |
+| 0:35–0:50 | Direct/Amortize result lands with parity | Show final truth-locked savings and 120-field parity |
+| 0:50–1:04 | Exact Snowflake run and step rows | “Do not trust the percentage. Query it.” |
+| 1:04–1:15 | Enterprise product ladder and QR | “One base URL. Same answer. Lower measured cost.” |
+
+## First frame
+
+```text
+AMORTIZE
+The cost-control plane for enterprise AI agents
+```
+
+Do not start with a logo animation. Show the problem or product state within two
+seconds.
 
 ## Capture list
 
-- Proxy health response and clean startup line.
-- One-base-URL client configuration with credentials cropped.
-- Cold 2×2 result.
+- Clean proxy health response.
+- One-base-URL configuration with all credentials cropped.
+- Cold direct-versus-Amortize result.
 - Warm result and parity stamp.
-- Snowflake RUNS/STEPS query for the exact run IDs.
-- Dashboard result with backend label visible.
-- Optional voice trigger, captured separately so it can be removed cleanly.
-- Final repository page with the submission README.
+- Snowflake rows for the exact run IDs.
+- Dashboard with backend label visible.
+- Optional voice trigger captured as a removable insert.
+- Final repository page and QR code.
 
 ## Recording direction
 
 - Capture at 2560×1440 or higher; deliver 1920×1080, 30 fps.
-- Use a 16:9 safe area and 150% terminal zoom.
-- Cursor movement should be intentional; no hunting, resizing, or horizontal
-  scrolling.
-- Keep terminal output to the result and one proof row—logs are texture, not the
-  story.
-- Add burned-in captions. Many judges will first watch muted.
-- Use UI sounds sparingly: one transition for LIGHTEN, one success tone for
-  parity. Avoid cinematic trailer booms.
-- Music, if any, stays under −24 LUFS beneath narration and must be licensed.
-
-## Edit rhythm
-
-- First visual change within two seconds.
-- No shot longer than eight seconds unless a measured number is landing.
-- Use hard cuts for commands and a short ease for system-state changes.
-- Hold each headline metric for at least 2.5 seconds.
-- End card remains for four seconds so the QR code is scannable.
+- Use 150% terminal zoom and a 16:9 safe area.
+- Add burned-in captions; assume the first watch is muted.
+- Never scroll while a judge is reading a metric.
+- Hold final percentages for 2.5 seconds and the QR code for four seconds.
+- Logs are texture, not content. Show one meaningful health line and one proof
+  row.
+- Avoid cinematic trailer effects. Use one state-change sound for LIGHTEN and
+  one restrained success tone for parity.
 
 ## On-screen copy
 
-Preferred:
+Use:
 
-- “The cost drops. The answer doesn't.”
-- “Same model. Same task. Same 120-field answer.”
-- “Don't trust the percentage. Query it.”
-- “One base URL. Any compatible agent.”
-- “Compound intelligence. Not token bills.”
+- Every agent run should get cheaper with experience.
+- The cost drops. The answer doesn't.
+- Cost per successful task—not just cost per million tokens.
+- Do not trust the percentage. Query it.
+- One base URL. Same agent. Same answer. Lower measured cost.
 
 Avoid:
 
-- “Revolutionary” or “game-changing.”
-- “Zero hallucinations.”
-- “Guaranteed savings.”
-- Any percentage not tied to the final evidence run.
+- revolutionary;
+- game-changing;
+- zero hallucinations;
+- guaranteed savings;
+- enterprise-ready;
+- any number not tied to the displayed commit.
 
-## Export and file names
+## Three-minute backup
+
+Follow `PITCH_SCRIPT.md` exactly. The backup must use the same SHA, model,
+backend, and metrics as the live script. If the live run stalls, cut to the
+backup after 12 seconds without apologizing.
+
+## Exports
 
 ```text
 amortize-product-75s-1080p.mp4
 amortize-demo-backup-3m-1080p.mp4
-amortize-demo-thumbnail.png
+amortize-thumbnail-enterprise.png
 amortize-results-final.png
-amortize-snowflake-proof.png
+amortize-snowflake-receipt.png
 ```
 
-Keep source recordings outside git. Commit only compressed submission assets
-that the team explicitly wants in the repository.
+Keep raw recordings outside git. Commit only team-approved compressed assets.

@@ -1,107 +1,127 @@
-# AMORTIZE — The cost drops. The answer doesn't.
+# AMORTIZE
 
-> **AI agents have amnesia. Your cloud bill does not.**
->
-> Amortize is a transparent local proxy that makes agent runs cheaper, turns
-> repeated work into reusable skills, and proves every saving in Snowflake.
+## The cost-control plane for enterprise AI agents
+
+> **Every agent run should get cheaper with experience.**
+
+Enterprises are deploying agents into support, engineering, finance, and
+operations. But every run still pays to resend large tool definitions,
+reprocess large results, and rediscover workflows the company already paid to
+solve.
+
+Amortize sits between any compatible agent and its model. It removes avoidable
+context, converts successful repeated work into verified Skills, and writes the
+economic proof to Snowflake.
+
+```text
+One base URL. Same agent. Same answer. Lower measured cost.
+```
 
 **Snowflake × Beta Fund · Agent & Token Economy Hackathon**
 
-Primary track: **Cost of Intelligence** · Secondary: **Wildcard / agent economics**
+Primary track: **Cost of Intelligence** · Secondary: **Wildcard**
 
-## Judge this project in 30 seconds
+## The YC answer
 
-| The problem | The product | The proof |
+**What are you building?**
+
+A transparent proxy that reduces and audits the cost of enterprise AI agents.
+
+**Who needs it?**
+
+AI platform teams operating repetitive, tool-heavy agent workflows.
+
+**What is the wedge?**
+
+Change one model base URL. No application rewrite or agent-framework lock-in.
+
+**Why does it win?**
+
+Amortize optimizes both new and repeated runs, then refuses to count a saving
+unless output parity passes.
+
+## The enterprise problem: three taxes
+
+### 1. The context tax
+
+An agent may carry dozens of verbose tool schemas even when a turn needs only
+one. Those tokens are billed repeatedly across the agent loop.
+
+### 2. The repetition tax
+
+A workflow that succeeded yesterday is usually rediscovered from scratch today.
+The company pays for reasoning it already owns.
+
+### 3. The accountability gap
+
+Provider invoices show total usage, not which agent, task, internal discovery
+step, replay, or tool created the bill—and not whether the cheaper output was
+still correct.
+
+## One product, three verbs
+
+| Layer | What it does | Enterprise outcome |
 |---|---|---|
-| Agents repeatedly resend large tool schemas and rediscover procedures they already completed. | Point an existing OpenAI- or Anthropic-compatible client at one local proxy. No SDK swap and no application rewrite. | Every LLM, tool, replay, and parity step lands in a Snowflake-compatible ledger. The demo computes savings from those rows. |
+| **LIGHTEN** | Discovers tools on demand and spills oversized results behind readable handles | Less context and lower cost on new tasks |
+| **AMORTIZE** | Compiles agreeing successful Cases into guarded, versioned Skills | Repeated workflows become cheaper and faster |
+| **PROVE** | Records model calls, tools, replays, tokens, cost, accuracy, and parity | Auditable savings, budgets, and chargeback data |
 
-The product has three verbs:
-
-1. **LIGHTEN** new runs by revealing full tool schemas only when the model asks
-   for them and spilling oversized tool results behind readable handles.
-2. **AMORTIZE** repeat runs by compiling successful Cases into guarded Skills
-   and replaying the procedure with at most two small LLM calls.
-3. **PROVE** the result with token, cost, latency, parity, and accuracy evidence
-   in Snowflake, with SQLite as a resilient local fallback.
-
-The promise is deliberately simple:
+The operating principle:
 
 > **The cost drops. The answer doesn't.**
 
-## The three-minute experience
+## The 100-second product demo
 
-```text
-00:00  Problem       “AI agents have amnesia. Your cloud bill does not.”
-00:25  One switch    Existing agent → Amortize with one base URL
-00:45  LIGHTEN       Cold run: fewer schema tokens, same 120 fields
-01:25  AMORTIZE      Repeat run: guarded Skill replay, parity ✓
-02:00  PROVE         Open Snowflake-backed evidence, not a marketing estimate
-02:25  Universality  Reuse the proxy with another agent; optional voice trigger
-02:45  Close         “Compound intelligence—not token bills.”
-```
-
-Full materials:
-
-- [Legendary three-minute pitch](PITCH_SCRIPT.md)
-- [Eight-slide narrative and visual direction](SLIDES.md)
-- [Live-demo runbook and failure ladder](DEMO_RUNBOOK.md)
-- [Video shot list](VIDEO_PLAN.md)
-- [Verified metrics and truth-lock process](METRICS.md)
-- [Judge Q&A](JUDGE_QA.md)
-
-## Architecture
-
-```mermaid
-flowchart LR
-    A["Any agent or SDK"] -->|"one base URL"| P["Amortize proxy"]
-    P --> L["LIGHTEN\nselective tool context"]
-    L --> R["AMORTIZE\nguarded Skill replay"]
-    R --> N["Novita / model upstream"]
-    P --> E["EverOS\nCases + Skills"]
-    L --> S["Snowflake ledger"]
-    R --> S
-    N --> S
-    S --> D["PROVE dashboard\ncost + parity + accuracy"]
-```
-
-Amortize sits in the request path, but optimization is never allowed to break
-the request. A failed optimization falls back to the original full agent run.
-
-## One switch, existing clients
+1. Route an unchanged agent through `http://127.0.0.1:4000/v1`.
+2. Prove the proxy is live with a fast health check.
+3. Reveal the truth-locked 30-ticket, eight-tool cold result.
+4. Reveal the repeated-task Skill result and exact parity.
+5. Query the Snowflake rows behind both percentages.
 
 ```bash
-uv sync
 uv run amort up
-```
-
-OpenAI-compatible clients:
-
-```text
-base_url = http://127.0.0.1:4000/v1
-```
-
-Anthropic-compatible clients and Claude Code:
-
-```bash
-export ANTHROPIC_BASE_URL=http://127.0.0.1:4000
-```
-
-Demo and proof:
-
-```bash
+# Run the full measured 2×2 immediately before presenting:
 uv run amort demo --task ticket_triage --live
 uv run amort stats
 uv run amort dash --port 8501
 ```
 
-## What the demo actually proves
+Presenter assets:
 
-The committed fixture asks an agent to triage 30 support tickets using eight
-verbose tools. Each of the four measured cells—direct/proxied × cold/warm—is
-graded against a deterministic 120-field report.
+- [Three-minute demo pitch](PITCH_SCRIPT.md)
+- [Three-minute cue card](THREE_MINUTE_CUE_CARD.md)
+- [Exact live demo script](DEMO_SCRIPT.md)
+- [Prewritten Snowflake demo queries](DEMO_QUERIES.sql)
+- [YC pitch variants](YC_PITCH.md)
+- [Six-slide deck](SLIDES.md)
+- [Enterprise one-pager](ENTERPRISE_ONE_PAGER.md)
+- [Hackathon submission copy](SUBMISSION_COPY.md)
+- [Demo operations runbook](DEMO_RUNBOOK.md)
+- [Video plan](VIDEO_PLAN.md)
+- [Verified metrics lock](METRICS.md)
+- [Judge Q&A](JUDGE_QA.md)
+- [Positioning notes](POSITIONING.md)
 
-The latest committed live baseline is intentionally the **pre-optimization
-control**:
+## The fair race
+
+```text
+                     DIRECT                    AMORTIZE
+NEW TASK             full agent                LIGHTEN
+REPEATED TASK        full agent again          verified Skill replay
+
+Constant: model · task · tools · output contract · 120-field grader
+```
+
+Submission gates—not achieved claims until the final evidence run:
+
+- **≥60% tool-schema token reduction** with equal output.
+- **≥85% cheaper warm run** with field-exact parity.
+- Every public percentage traces to `demo_report.json` and ledger rows.
+
+## Current verified control
+
+The latest committed live Novita run established a clean pre-optimization
+control:
 
 | Cell | Tokens | Cost | Time |
 |---|---:|---:|---:|
@@ -110,47 +130,67 @@ control**:
 | Direct warm | 48,150 | $0.008 | 35.0 s |
 | Amortize warm | 45,491 | $0.008 | 31.2 s |
 
-That run achieved cold parity, warm parity, **120/120 field equality**, and
-ground-truth accuracy across all cells. Its ±few-percent delta is normal model
-noise while LIGHTEN and AMORTIZE are still being merged; it is not presented as
-a saving. See [METRICS.md](METRICS.md) before quoting any final percentage.
+The run achieved 120-field cold parity, 120-field warm parity, and correct
+ground truth in all four cells. Its small cost delta is ordinary run-to-run
+noise while the optimizer layers are pending merge. It is not a savings claim.
 
-Submission gates:
+See [METRICS.md](METRICS.md) before quoting final results.
 
-- LIGHTEN: **≥60% tool-schema token reduction** with equal output.
-- AMORTIZE: **≥85% cheaper warm run** with field-exact parity.
-- Every public number must trace to `demo_report.json` and ledger rows.
+## Architecture
 
-## Why this can win
+```mermaid
+flowchart LR
+    A["Enterprise agents\nIDE · support · ops · finance"] -->|"one base URL"| P["Amortize proxy"]
+    P --> L["LIGHTEN\non-demand context"]
+    L --> R["AMORTIZE\nverified Skill replay"]
+    R --> M["Model provider\nNovita / OpenAI-compatible / Anthropic"]
+    P <--> E["Memory layer\nCases + Skills"]
+    L --> S["Snowflake economic ledger"]
+    R --> S
+    M --> S
+    S --> D["PROVE\ncost · parity · accuracy"]
+```
 
-### Track 1 · Cost of Intelligence
+Optimization is fail-open. Unsupported request shapes pass through untouched;
+an optimizer failure retries the original full request.
 
-The demo compares the same task, model, tools, output contract, and grader. The
-only variable is whether traffic flows through Amortize. The percentage on the
-screen is calculated—not asserted.
+## Not another model gateway or memory database
 
-### Wildcard · Agent and token economics
+| Category | Primary job | What remains missing |
+|---|---|---|
+| Model gateway | Route requests across providers | Does not make repeated procedures reusable |
+| Prompt cache | Discount repeated provider prefixes | Depends on prefix/provider behavior; does not replay work as code |
+| RAG / agent memory | Retrieve prior facts and context | More context can still increase inference cost |
+| **Amortize** | Make run economics improve with experience | Uses memory and routing as inputs, then proves cost and parity |
 
-Snowflake turns opaque model traffic into an auditable economic layer: cost per
-agent, task, step, tool, replay, team, and model. That creates a path to budgets,
-chargeback, routing, and reusable Skill marketplaces.
+Agent-memory platforms correctly argue that experience should become reusable
+assets. Amortize applies that principle to enterprise unit economics: a Skill is
+valuable only when it measurably avoids work and still passes parity.
 
-### Product path
+## The enterprise buyer
 
-The local proxy is the open-source wedge. A hosted team product can add policy,
-shared verified Skills, spend budgets, chargeback, and fleet analytics. A
-possible—not yet launched—pricing hypothesis is a free local tier plus a
-per-seat team control plane, comfortably above the track's $10 ARR/user bar.
+**Primary user:** AI platform engineer.
 
-## The wow moments
+**Economic buyer:** VP Engineering, Head of AI Platform, or FinOps leader.
 
-1. **One-line adoption:** change a base URL, not the agent.
-2. **A fair race:** direct versus Amortize, cold versus repeated.
-3. **The parity stamp:** savings do not count unless the 120 fields match.
-4. **The Snowflake receipt:** judges can inspect the rows behind the percentage.
-5. **The second-client beat:** route Claude Code, Cursor, or another compatible
-   agent through the same proxy. Voice can trigger the task, but the ledger is
-   the proof.
+**First workflows:** support triage, incident response, code maintenance,
+invoice reconciliation, compliance checklists, and recurring research.
+
+What they buy:
+
+- lower cost per successful agent task;
+- auditable cost by run, task, model, and step;
+- safe reuse with versioning, guards, and fallback;
+- a path to budgets, policy, and internal chargeback;
+- portability across compatible clients and model providers.
+
+## Business model hypothesis
+
+The local proxy is the open-source wedge. A paid enterprise control plane can
+add shared Skill governance, SSO/RBAC, fleet policy, budgets, chargeback,
+retention controls, and managed Snowflake reporting.
+
+This is product direction, not shipped functionality or claimed revenue.
 
 ## Demo routes
 
@@ -161,42 +201,19 @@ per-seat team control plane, comfortably above the track's $10 ARR/user bar.
 | Anthropic messages | `POST /v1/messages` |
 | Health | `GET /health` |
 | Proxy statistics | `GET /stats` |
-| Streamlit dashboard | `http://localhost:8501` |
-| Projector stage | Planned `http://localhost:4700`; use only after merged and verified |
-
-## Showcase design pattern
-
-The submission borrows presentation patterns—not code or assets—from three
-high-signal open-source projects:
-
-- [Browser Use](https://github.com/browser-use/browser-use): lead with visual,
-  named tasks and an immediate human/agent quickstart.
-- [Langflow](https://github.com/langflow-ai/langflow): communicate the product
-  in one feature block and get to a runnable command quickly.
-- [OpenHands](https://github.com/OpenHands/OpenHands): show a clear product
-  ladder from local developer tool to a team/cloud business.
-
-Our differentiator is the **proof surface**: the first hero visual should be the
-measured race plus parity, not a generic agent animation.
-
-## Submission asset checklist
-
-- [ ] 16:9 title slide and eight-slide deck
-- [ ] 60–90 second captioned product cut
-- [ ] Three-minute offline backup video
-- [ ] Clean live `demo_report.json` from the final commit
-- [ ] Results screenshot with visible parity and backend label
-- [ ] Snowflake query/result screenshot
-- [ ] Architecture graphic exported from the Mermaid diagram
-- [ ] QR code to repository and 60-second video
-- [ ] Final README links—no private or expiring URLs
-- [ ] Credentials, usernames, and tokens cropped from every frame
+| Dashboard | `http://localhost:8501` |
+| Stage | Planned `http://localhost:4700`; use only after verified |
 
 ## Source of truth
 
-- Product and local setup: [`../README.md`](../README.md)
-- Current ownership: [`../TEAM.md`](../TEAM.md)
+- Product and setup: [`../README.md`](../README.md)
+- Ownership: [`../TEAM.md`](../TEAM.md)
 - Frozen interfaces: [`../CONTRACTS.md`](../CONTRACTS.md)
-- Measured engineering log: [`../BUILD_REPORT.md`](../BUILD_REPORT.md)
+- Measured build log: [`../BUILD_REPORT.md`](../BUILD_REPORT.md)
 - Executable claims: `../scripts/accept_layer1.py` and
   `../scripts/accept_layer2.py`
+
+Positioning inspiration: [TencentDB Agent Memory](https://github.com/TencentCloud/TencentDB-Agent-Memory)
+demonstrates how to explain reusable agent experience as enterprise
+infrastructure. Amortize occupies a different layer: measured cost reduction,
+guarded procedural reuse, and economic proof.

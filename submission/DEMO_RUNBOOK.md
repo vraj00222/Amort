@@ -1,5 +1,9 @@
 # Live demo runbook
 
+Presenter wording and exact on-screen beats live in [DEMO_SCRIPT.md](DEMO_SCRIPT.md).
+This file is the operator checklist that makes that two-minute product sequence
+reliable.
+
 ## The non-negotiable rule
 
 The demo is a measured race, not a magic trick. Every public percentage must be
@@ -63,7 +67,9 @@ browser password managers on the projector.
    git rev-parse --short HEAD
    ```
 
-2. Run the live 2×2 once without screen recording overhead.
+2. Run the live 2×2 once without screen recording overhead, immediately before
+   presenting. Four real model cells do not fit inside the three-minute pitch;
+   the on-stage sequence reveals this fresh truth-locked run.
 3. Copy `demo_report.json` to a private timestamped evidence folder outside the
    repository; it is intentionally gitignored.
 4. Confirm:
@@ -96,33 +102,34 @@ Snowflake query in separate browser tabs.
 Show the healthy proxy and the one base URL. Do not type setup commands from
 scratch.
 
-### Beat 2 — Cold race, 35 seconds
+### Beat 2 — Live proxy proof, 8 seconds
 
-Run or reveal direct versus Amortize. Explain schema dieting while the task
-runs. Freeze on cost and parity.
+Run `curl -s http://127.0.0.1:4000/health`. Leave after eight seconds.
 
-### Beat 3 — Repeat race, 30 seconds
+### Beat 3 — Cold result, 30 seconds
 
-Trigger the same task. Optional voice input is allowed only if it has passed
-three consecutive rehearsals. Freeze on warm saving and parity.
+Reveal direct versus Amortize from the fresh pre-run. Explain schema dieting.
+Freeze on cost and parity.
 
-### Beat 4 — Snowflake receipt, 20 seconds
+### Beat 4 — Repeat result, 30 seconds
+
+Reveal the warm row from the same run. Optional voice input is allowed only as
+a rehearsed visual insert, not as evidence that the full run is live.
+
+### Beat 5 — Snowflake receipt, 25 seconds
 
 Open the exact run's rows. Point to total tokens, cost, internal calls, and
 parity. Say “query it,” then stop scrolling.
 
-### Beat 5 — Universality, 10 seconds
+### Beat 6 — Enterprise close, 10 seconds
 
-Show a second compatible client already configured with the proxy. A normal
-response plus a new ledger row is enough; do not start a second long task.
+Show the product ladder and final result. Do not start another agent task.
 
 ## Failure ladder
 
-### Level 1 — Live run is merely slow
+### Level 1 — Live health check is slow
 
-Continue the explanation for at most 12 seconds, then switch to the backup clip
-from the same commit. Say: “This is the same verified run recorded before the
-session.”
+Leave the terminal after eight seconds and reveal the pre-run result.
 
 ### Level 2 — Novita or Wi-Fi fails
 
