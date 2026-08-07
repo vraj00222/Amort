@@ -1,81 +1,174 @@
 # Judge Q&A
 
-Keep answers under 25 seconds. Lead with the distinction, then point to evidence.
+Answer each in under 25 seconds. Lead with the distinction, then point to one
+measured artifact.
+
+## “What is Amortize?”
+
+Amortize is the cost-control plane for enterprise AI agents. It sits between a
+supported agent client and its model, creates a place to reduce avoidable work,
+and measures cost per successful task.
+
+## “What is actually built?”
+
+The compatible proxy, Novita live harness, 120-field grader, Snowflake/SQLite
+ledger, memory adapter, dashboard, and live/replay projector stage are built.
+LIGHTEN is merged and acceptance-green at 65.4% less schema context; one live
+pair used 15.2% fewer input tokens with field-exact parity. Guarded Skill
+replay remains behind its executable gate.
 
 ## “Isn't this just prompt caching?”
 
-No. Prompt caching discounts repeated provider-side prefixes. LIGHTEN reduces
-the context that must be sent by discovering tools on demand. AMORTIZE can avoid
-the full agent loop by replaying a verified procedure as guarded code. We still
-record cache-read tokens, so Amortize can benefit from prompt caching too.
+Prompt caching discounts provider-recognized repeated prefixes. LIGHTEN is
+designed to change what enters context. REPLAY is designed to avoid a full
+agent loop with guarded execution. Cache reads can coexist with both and must
+be counted separately.
 
-## “How do you know a cheaper answer is still correct?”
+## “Isn't this an agent-memory product?”
 
-Savings do not count without quality. The demo has deterministic ground truth
-and field-exact parity across 120 fields. Candidate Skills never replay; verified
-Skills run guards and fall back to the full agent if anything is wrong.
+Memory retrieves prior information. Amortize uses Cases and Skills as inputs to
+task economics. The output is not a memory hit; it is lower measured cost per
+successful task, with a quality verdict and fallback history.
+
+## “How do you know the cheaper output is correct?”
+
+The fixture has deterministic ground truth and field-exact grading across 120
+fields. We show parity and ground-truth accuracy. If either fails, the saving is
+invalid. Matching two wrong answers would not pass.
+
+## “Does the percentage include internal optimizer calls?”
+
+Yes—that is part of the acceptance contract. Discovery, compilation, binding,
+and verification calls count toward Amortize's total. Otherwise the comparison
+would hide the real cost of optimization.
+
+## “How is the race fair?”
+
+Both lanes use the same final commit, model, 30 tickets, eight tools, prompt,
+output budget, and 120-field grader. We compare direct versus Amortize for new
+and repeated work and join the evidence by run ID.
+
+## “How many repeats until a Skill pays back?”
+
+We calculate break-even as one-time compilation cost divided by the difference
+between direct repeat cost and guarded replay cost. The final demo must show the
+measured inputs; we will not invent a generic break-even number.
+
+## “How is dollar cost calculated?”
+
+Token counts are multiplied by the checked-in model pricing table, with the
+model and price source disclosed. The report also labels simulated estimates,
+and public claims require a live `simulated:false` run.
 
 ## “Why is Snowflake essential?”
 
-The optimizations introduce internal model calls and replay steps that a normal
-API bill cannot explain. Snowflake is the auditable economic record across runs,
-steps, tools, models, agents, and teams. It powers the percentage, parity trail,
-budgets, and future chargeback—not just a dashboard screenshot.
+Provider invoices cannot explain internal optimization steps or cost per
+business task. Snowflake makes run and step economics queryable by platform and
+finance teams and supplies the foundation for budgets, routing, governance, and
+chargeback.
 
-## “What happens if the proxy breaks?”
+## “Is parity stored in Snowflake today?”
 
-Optimization is fail-open. The original request is retried with the full tool
-catalogue. Streaming and unsupported request shapes remain transparent. Ledger
-writes can degrade to the schema-compatible local SQLite backend.
+Not reliably as its own grade event in this build. Snowflake stores the run and
+step economics; the signed demo report stores parity and accuracy. We show both
+with the same run ID rather than overstate the current schema path.
+
+## “Why would a large company buy this?”
+
+They need more than a cheaper API call: attribution, quality proof, safe reuse,
+policy, and a path to charge costs across teams. We land with one measurable
+workflow and expand only after the economics are proven.
+
+## “Who is the user and buyer?”
+
+The user is the AI platform engineer operating tool-heavy agents. The buyer is
+the leader accountable for model spend and reliability: Head of AI Platform,
+VP Engineering, or FinOps.
+
+## “What is the first workflow?”
+
+Deterministic, structured, read-heavy work: support triage, incident
+classification, reconciliation review, release checklists, and recurring
+analysis. These provide a real quality contract and a safe reuse boundary.
+
+## “Would you replay money-moving or destructive actions?”
+
+Not with today's controls. Side-effecting Skills need idempotency, explicit
+approval, action policy, and stronger audit guarantees. Our first wedge avoids
+those workflows.
+
+## “What invalidates a Skill?”
+
+A model, tool, schema, policy, or output-contract change should invalidate or
+re-verify it. A guard failure falls back to the full path and becomes evidence
+for whether the Skill should be demoted.
+
+## “What happens if optimization breaks?”
+
+Optimization is fail-open: retry the original full request. Unsupported shapes
+pass through, and ledger writes can degrade to the schema-compatible SQLite
+backend. A failed optimization is visible, not converted into a fake saving.
+
+## “Does the proxy add latency or become a single point of failure?”
+
+It adds a network/control hop, which we measure. The local technical preview is
+not yet a production HA service. Enterprise direction includes redundant
+deployment, health checks, timeout policy, bypass, and VPC operation.
 
 ## “Does it work with existing agents?”
 
-The proxy exposes OpenAI-compatible `/v1/chat/completions` and Anthropic-compatible
-`/v1/messages`. Adoption is a base-URL change. The repository includes gateway
-compatibility checks for Claude Code, and the demo uses Novita's OpenAI-compatible
-endpoint.
+The proxy exposes OpenAI Chat Completions and Anthropic Messages surfaces. The
+Claude Code gateway path is tested, and the live demo uses Novita. We say
+“supported compatible clients,” because protocol passthrough is broader than
+the optimizer's current coverage.
+
+## “Why Snowflake instead of Postgres?”
+
+The local path uses SQLite for frictionless development. Snowflake is the
+enterprise analytics destination: finance and platform teams can query spend,
+join organizational data, govern access, and build budgets or chargeback in a
+system they already use.
 
 ## “Where does Voice Cursor fit?”
 
-Voice is an optional input layer, not the optimizer. It can trigger an existing
-compatible agent, which routes through the same Amortize proxy. The wow moment is
-that voice, CLI, IDE, and application traffic all create the same measurable
-Snowflake economic trace.
+Voice is an optional presentation/control input, not the optimizer or proof. It
+can reveal an already measured stage state through an allowlisted local
+command. The report and ledger—not the voice moment—remain the evidence.
+
+## “What data is persisted?”
+
+The ledger stores run/step economics and metadata. Local/EverOS Cases may store
+prompts, tool arguments/results, and outputs. Production requires redaction,
+retention, encryption, tenant isolation, and access controls; we call those
+roadmap, not shipped features.
 
 ## “What is the business model?”
 
-The local proxy can remain an open-source adoption wedge. The paid team control
-plane adds shared verified Skills, governance, spend budgets, routing policy,
-fleet analytics, and chargeback. Pricing is a hypothesis until validated; do
-not claim current revenue or customers.
+The open-source self-hosted proxy is the wedge. A paid team/enterprise control
+plane can add shared Skill governance, policy, budgets, retention, managed
+analytics, chargeback, identity, and VPC deployment. That is a hypothesis, not
+current revenue.
 
-## “Who pays?”
+## “Who signs the first contract?”
 
-Engineering and operations teams running repetitive agent workflows—support
-triage, code maintenance, incident response, finance operations, and research.
-The economic buyer is the leader accountable for model spend and reliability.
+An AI platform leader with a repetitive workflow and visible model spend. The
+initial offer is a measured cost-per-success engagement; the expansion is an
+annual control-plane contract after savings are proven.
 
 ## “What is the moat?”
 
-The compounding dataset of verified Cases and Skills, plus the cross-provider
-economic ledger. A generic gateway sees requests; Amortize learns which
-procedures are safely reusable and has parity evidence for each promotion.
+The compounding customer-specific map from task fingerprint, to verified
+procedure, to realized savings, to fallback history. A gateway sees traffic;
+Amortize learns when reuse is both safe and economically valuable.
 
-## “What is built versus roadmap?”
+## “What if models become much cheaper?”
 
-Use `BUILD_REPORT.md` from the final commit. Today the transparent proxy,
-OpenAI/Anthropic routes, Novita demo harness, parity grader, Snowflake/SQLite
-ledger, and EverOS/local memory are real. Describe LIGHTEN, AMORTIZE, and stage
-only according to their final acceptance results.
-
-## “Why will this matter if models get cheaper?”
-
-Cheaper models expand agent usage, tool counts, and context volume. Teams still
-need to stop recomputing identical work, and they need an economic record across
-models. Amortization becomes more valuable as agents become more ubiquitous.
+Cheaper models expand agent volume, tools, and context. Companies still need to
+avoid recomputing known work and attribute cost to successful outcomes across
+providers. The control problem grows with adoption.
 
 ## “What would you build next?”
 
-First, more deterministic task families and continuous parity evaluation. Then
-team policy, model routing using measured task economics, shared Skill promotion,
-and chargeback on the Snowflake ledger.
+Finish and truth-lock guarded REPLAY, rerun the complete four-cell launch race,
+persist quality grade events, and measure break-even across more workflows;
+then add shared Skill policy, task-aware routing, budgets, and chargeback.

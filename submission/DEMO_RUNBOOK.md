@@ -1,157 +1,211 @@
-# Live demo runbook
+# Product-launch demo runbook
 
-## The non-negotiable rule
+Presenter wording lives in [PITCH_SCRIPT.md](PITCH_SCRIPT.md). This file is the
+operator system for producing a fresh, defensible result and revealing it in
+three minutes without visible setup friction.
 
-The demo is a measured race, not a magic trick. Every public percentage must be
-copied from the final run and tied to its commit SHA. If the live number changes,
-the slide changes.
+## Non-negotiable rule
+
+The demo is a measured race, not a magic trick. A public saving must come from
+the final live report, include every optimizer call, pass parity and accuracy,
+and match the displayed git SHA. If the live number changes, every asset
+changes with it.
 
 ## Current surfaces
 
-| Screen | Route/command | Demo job |
+| Surface | Route / command | Launch job |
 |---|---|---|
-| Proxy | `uv run amort up` → `http://127.0.0.1:4000` | Show one-switch compatibility and health |
-| Race | `uv run amort demo --task ticket_triage --live` | Produce the direct/proxied × cold/warm comparison |
-| Evidence | `uv run amort stats` | Show the ledger rollup |
-| Dashboard | `uv run amort dash --port 8501` | Show savings and cost composition |
-| Stage | Planned `http://127.0.0.1:4700` | Use only when `--stage` and `amort/demo/stage.py` actually exist |
+| Proxy | `uv run amort up` → `http://127.0.0.1:4000` | One-endpoint integration |
+| Race + stage | `uv run amort demo --task ticket_triage --live --stage` | Four-cell experiment and projector result |
+| Stage | `http://127.0.0.1:4700` | Direct vs Amortize reveal; SSE-driven |
+| Stage replay | `uv run amort demo --replay demo_report.json` | Network-independent backup |
+| Ledger rollup | `uv run amort stats` | Compact economics proof |
+| Dashboard | `uv run amort dash --port 8501` → `http://127.0.0.1:8501` | Cost composition and backend label |
+| Snowflake | prewritten [DEMO_QUERIES.sql](DEMO_QUERIES.sql) | Exact run and step economics |
 
-## Branch protocol while main is moving
+The stage route is implemented in `amort/demo/stage.py`; it is no longer a
+planned surface.
 
-Before each rehearsal block:
+## Branch protocol while implementation moves
+
+Before every rehearsal block:
 
 ```bash
 git status --short
-git fetch origin
+git fetch origin --prune
 git merge origin/main
+git rev-parse --short HEAD
 ```
 
-Rules:
-
 - Stay on `sameer` for submission material.
-- Do not edit code owned by another workstream from this branch.
+- Preserve implementation changes from `main`; do not reimplement another
+  workstream from the submission branch.
 - Never force-push.
-- Resolve documentation conflicts by preserving newer verified metrics from
-  main, then reapply submission wording.
-- Re-run the truth lock after every implementation merge.
+- After every implementation merge, rerun the gates and regenerate the report,
+  screenshots, video overlays, deck metrics, and script numbers as one unit.
 
-## T−30 minutes: technical preflight
+## T−45 minutes — code and environment preflight
+
+Use two terminals because `amort up` blocks.
+
+**Terminal A — proxy**
 
 ```bash
 uv sync
+uv run amort up
+```
+
+**Terminal B — checks**
+
+```bash
 uv run amort doctor
 uv run ruff check amort scripts
 uv run python scripts/smoke_proxy.py
 uv run python scripts/smoke_ledger.py
-```
-
-Then run the acceptance gate appropriate to the merged work:
-
-```bash
+uv run python scripts/test_stage.py
 uv run python scripts/accept_layer1.py
 uv run python scripts/accept_layer2.py
 ```
 
-Do not expose `.env`, shell history, PATs, API keys, account identifiers, or
-browser password managers on the projector.
+Do not proceed to a savings recording unless both acceptance scripts pass. A
+passing stage test does not mean the optimization layers passed.
 
-## T−20 minutes: truth lock
+## T−25 minutes — truth lock
 
-1. Record the exact commit:
+1. Confirm a clean or fully understood tree and capture the SHA:
 
    ```bash
+   git status --short
    git rev-parse --short HEAD
    ```
 
-2. Run the live 2×2 once without screen recording overhead.
-3. Copy `demo_report.json` to a private timestamped evidence folder outside the
-   repository; it is intentionally gitignored.
-4. Confirm:
+2. Run the live race and keep the stage process open:
+
+   ```bash
+   uv run amort demo --task ticket_triage --live --stage
+   ```
+
+3. Create a private evidence folder outside the repository named for the SHA.
+   Copy in the report, terminal capture, stage capture, dashboard capture,
+   Snowflake capture, and final exported videos.
+4. Confirm every launch invariant:
+   - `simulated: false`;
    - all four cells completed;
+   - correct final model;
+   - Snowflake is the displayed backend for a Snowflake claim;
    - cold parity passes;
-   - warm parity passes;
-   - ground-truth accuracy passes;
-   - backend label is the backend actually used;
-   - no number is `simulated: true` for a live claim.
-5. Populate [METRICS.md](METRICS.md), then update slide 5 and the script tokens.
-6. Capture a screenshot and a backup video from this exact commit.
+   - repeat parity passes;
+   - ground-truth accuracy passes for all cells;
+   - the optimizer's internal discovery/compile/bind/verify calls are included;
+   - a verified Skill ID exists before showing Skill replay;
+   - report SHA, repository SHA, screenshots, and script agree.
+5. Populate [METRICS.md](METRICS.md) and every `{{TOKEN}}` in the spoken script.
+6. Export a matching backup video before the live presentation.
 
-## T−10 minutes: stage layout
+## T−10 minutes — launch scenes
 
-Use three visible surfaces, with notifications and unrelated windows closed:
+Use a single presentation/browser surface or numbered OBS scenes. Never make
+the audience watch window management.
 
-```text
-LEFT 40%       proxy health + concise logs
-CENTER 40%     race/stage result
-RIGHT 20%      Snowflake-backed dashboard
-```
+| Scene | Prepared state |
+|---:|---|
+| 1 | Stage final state at `:4700`, zoomed to 125–150% |
+| 2 | One-line `base_url` diff, credentials cropped |
+| 3 | Cold result frame with raw dollars hidden until reveal |
+| 4 | Repeat result frame with Skill/guard state |
+| 5 | Snowflake worksheet already filtered to exact run ID |
+| 6 | Matching `demo_report.json` quality fields or designed receipt |
+| 7 | Land-and-expand slide |
+| 8 | Final result + repository URL |
+| 9 | Local three-minute backup clip, paused on frame zero |
 
-Use 125–150% terminal zoom. Keep API keys off screen. Pin the final result and
-Snowflake query in separate browser tabs.
+Turn off notifications, browser extensions, unrelated tabs, shell history, and
+password-manager prompts. Put the timer where a teammate—not the audience—can
+see it.
 
-## Live sequence
+## Live reveal sequence
 
-### Beat 1 — Adoption, 15 seconds
+### 0:00–0:31 — Problem and product
 
-Show the healthy proxy and the one base URL. Do not type setup commands from
-scratch.
+Start on a completed task. Show the repeat reset, then reveal Amortize. No logo
+animation and no architecture tour.
 
-### Beat 2 — Cold race, 35 seconds
+### 0:31–0:44 — Integration
 
-Run or reveal direct versus Amortize. Explain schema dieting while the task
-runs. Freeze on cost and parity.
+Show one base URL changing. Do not type setup commands. Do not expose `/health`
+while it advertises stub layers.
 
-### Beat 3 — Repeat race, 30 seconds
+### 0:44–0:58 — Fair-race contract
 
-Trigger the same task. Optional voice input is allowed only if it has passed
-three consecutive rehearsals. Freeze on warm saving and parity.
+Say the constants: same model, same 30 tickets, same eight tools, same prompt,
+same 120-field grader. Say the run occurred moments ago from the displayed SHA.
 
-### Beat 4 — Snowflake receipt, 20 seconds
+### 0:58–1:26 — New-task result
 
-Open the exact run's rows. Point to total tokens, cost, internal calls, and
-parity. Say “query it,” then stop scrolling.
+Reveal raw Direct cost, raw Amortize cost, then the measured reduction. Reveal
+parity and ground-truth accuracy last. Do not celebrate before both are visible.
 
-### Beat 5 — Universality, 10 seconds
+### 1:26–1:54 — Repeat result
 
-Show a second compatible client already configured with the proxy. A normal
-response plus a new ledger row is enough; do not start a second long task.
+Reveal the direct reset and the guarded Skill path. Show the real Skill ID only
+if the final report produced one. Hold the final saving and correctness seal for
+three seconds.
+
+### 1:54–2:18 — Agent Economics Receipt
+
+Highlight one Snowflake row: run ID, model, tokens, dollars, and backend. Then
+show the same run ID in the signed report with parity, accuracy, and
+`simulated:false`. Do not claim the quality verdict is already stored as a
+Snowflake grade event until that implementation lands.
+
+### 2:18–3:00 — Enterprise and close
+
+Land with one workflow, expand to the fleet, then return to the winning result.
+Stop speaking at 3:00 and leave the repository URL visible.
 
 ## Failure ladder
 
-### Level 1 — Live run is merely slow
+### Level 1 — A scene or browser surface stalls
 
-Continue the explanation for at most 12 seconds, then switch to the backup clip
-from the same commit. Say: “This is the same verified run recorded before the
-session.”
+Cut to the next prepared scene after eight seconds. Do not debug in public.
 
-### Level 2 — Novita or Wi-Fi fails
+### Level 2 — Novita or Wi-Fi fails before the pitch
 
-Use the verified video and Snowflake screenshot. Do not silently switch to
-offline numbers.
+Use the backup clip and saved receipt from the exact prepared SHA. Do not switch
+silently to simulated values.
 
 ### Level 3 — Snowflake is unavailable
 
-Show the SQLite backend label and say that writes degrade locally by design.
-Use the saved Snowflake screenshot only as prior evidence, clearly labeled.
+Show the honest SQLite backend label and explain local failover. A saved
+Snowflake image may be shown only as prior evidence and must be labeled with its
+original SHA and date.
 
-### Level 4 — An optimization misses parity
+### Level 4 — LIGHTEN or REPLAY misses its gate
 
-Do not show its saving as success. Explain the guard/fallback contract and use
-the last truth-locked run. A cheap wrong answer is not a win.
+Show the verified control, quality contract, and receipt. Use the fallback copy
+in `PITCH_SCRIPT.md`. Never put an acceptance target in the result position.
+
+### Level 5 — Parity or accuracy fails
+
+Invalidate the saving. Lead with the guard/fallback contract. A cheap wrong
+answer is not a win.
 
 ## Presenter hand signals
 
-- Open palm: advance slide.
-- Two fingers: cut to backup clip.
-- Flat hand: stop live typing and go to results.
-- Point at wrist: skip optional voice/client beat and close.
+- Open palm: advance scene.
+- Two fingers: cut to backup video.
+- Flat hand: stop live interaction and go to the prepared receipt.
+- Point at wrist: skip optional voice control and begin the close.
 
 ## Final five-minute checklist
 
-- [ ] Final commit and script SHA match
-- [ ] Correct model and backend labels visible
-- [ ] Backup video opens locally with sound muted by default
-- [ ] Dashboard and Snowflake tabs are already loaded
-- [ ] Terminal font is readable from the back of the room
-- [ ] No notifications, secrets, usernames, or unrelated tabs visible
-- [ ] Timer is visible to a teammate, not the audience
+- [ ] Final SHA matches report, deck, script, images, and video
+- [ ] Correct model and backend labels are visible
+- [ ] `simulated:false` is visible in the evidence state
+- [ ] Raw dollars appear before percentages
+- [ ] Parity **and** accuracy are visible
+- [ ] Stage is open at `http://127.0.0.1:4700`
+- [ ] Snowflake is filtered to the exact run ID
+- [ ] Backup video opens locally and starts muted
+- [ ] No secrets, usernames, notifications, or unrelated tabs are visible
+- [ ] A teammate owns the timer and cut signals
