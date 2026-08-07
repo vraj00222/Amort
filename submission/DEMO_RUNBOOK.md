@@ -1,0 +1,157 @@
+# Live demo runbook
+
+## The non-negotiable rule
+
+The demo is a measured race, not a magic trick. Every public percentage must be
+copied from the final run and tied to its commit SHA. If the live number changes,
+the slide changes.
+
+## Current surfaces
+
+| Screen | Route/command | Demo job |
+|---|---|---|
+| Proxy | `uv run amort up` → `http://127.0.0.1:4000` | Show one-switch compatibility and health |
+| Race | `uv run amort demo --task ticket_triage --live` | Produce the direct/proxied × cold/warm comparison |
+| Evidence | `uv run amort stats` | Show the ledger rollup |
+| Dashboard | `uv run amort dash --port 8501` | Show savings and cost composition |
+| Stage | Planned `http://127.0.0.1:4700` | Use only when `--stage` and `amort/demo/stage.py` actually exist |
+
+## Branch protocol while main is moving
+
+Before each rehearsal block:
+
+```bash
+git status --short
+git fetch origin
+git merge origin/main
+```
+
+Rules:
+
+- Stay on `sameer` for submission material.
+- Do not edit code owned by another workstream from this branch.
+- Never force-push.
+- Resolve documentation conflicts by preserving newer verified metrics from
+  main, then reapply submission wording.
+- Re-run the truth lock after every implementation merge.
+
+## T−30 minutes: technical preflight
+
+```bash
+uv sync
+uv run amort doctor
+uv run ruff check amort scripts
+uv run python scripts/smoke_proxy.py
+uv run python scripts/smoke_ledger.py
+```
+
+Then run the acceptance gate appropriate to the merged work:
+
+```bash
+uv run python scripts/accept_layer1.py
+uv run python scripts/accept_layer2.py
+```
+
+Do not expose `.env`, shell history, PATs, API keys, account identifiers, or
+browser password managers on the projector.
+
+## T−20 minutes: truth lock
+
+1. Record the exact commit:
+
+   ```bash
+   git rev-parse --short HEAD
+   ```
+
+2. Run the live 2×2 once without screen recording overhead.
+3. Copy `demo_report.json` to a private timestamped evidence folder outside the
+   repository; it is intentionally gitignored.
+4. Confirm:
+   - all four cells completed;
+   - cold parity passes;
+   - warm parity passes;
+   - ground-truth accuracy passes;
+   - backend label is the backend actually used;
+   - no number is `simulated: true` for a live claim.
+5. Populate [METRICS.md](METRICS.md), then update slide 5 and the script tokens.
+6. Capture a screenshot and a backup video from this exact commit.
+
+## T−10 minutes: stage layout
+
+Use three visible surfaces, with notifications and unrelated windows closed:
+
+```text
+LEFT 40%       proxy health + concise logs
+CENTER 40%     race/stage result
+RIGHT 20%      Snowflake-backed dashboard
+```
+
+Use 125–150% terminal zoom. Keep API keys off screen. Pin the final result and
+Snowflake query in separate browser tabs.
+
+## Live sequence
+
+### Beat 1 — Adoption, 15 seconds
+
+Show the healthy proxy and the one base URL. Do not type setup commands from
+scratch.
+
+### Beat 2 — Cold race, 35 seconds
+
+Run or reveal direct versus Amortize. Explain schema dieting while the task
+runs. Freeze on cost and parity.
+
+### Beat 3 — Repeat race, 30 seconds
+
+Trigger the same task. Optional voice input is allowed only if it has passed
+three consecutive rehearsals. Freeze on warm saving and parity.
+
+### Beat 4 — Snowflake receipt, 20 seconds
+
+Open the exact run's rows. Point to total tokens, cost, internal calls, and
+parity. Say “query it,” then stop scrolling.
+
+### Beat 5 — Universality, 10 seconds
+
+Show a second compatible client already configured with the proxy. A normal
+response plus a new ledger row is enough; do not start a second long task.
+
+## Failure ladder
+
+### Level 1 — Live run is merely slow
+
+Continue the explanation for at most 12 seconds, then switch to the backup clip
+from the same commit. Say: “This is the same verified run recorded before the
+session.”
+
+### Level 2 — Novita or Wi-Fi fails
+
+Use the verified video and Snowflake screenshot. Do not silently switch to
+offline numbers.
+
+### Level 3 — Snowflake is unavailable
+
+Show the SQLite backend label and say that writes degrade locally by design.
+Use the saved Snowflake screenshot only as prior evidence, clearly labeled.
+
+### Level 4 — An optimization misses parity
+
+Do not show its saving as success. Explain the guard/fallback contract and use
+the last truth-locked run. A cheap wrong answer is not a win.
+
+## Presenter hand signals
+
+- Open palm: advance slide.
+- Two fingers: cut to backup clip.
+- Flat hand: stop live typing and go to results.
+- Point at wrist: skip optional voice/client beat and close.
+
+## Final five-minute checklist
+
+- [ ] Final commit and script SHA match
+- [ ] Correct model and backend labels visible
+- [ ] Backup video opens locally with sound muted by default
+- [ ] Dashboard and Snowflake tabs are already loaded
+- [ ] Terminal font is readable from the back of the room
+- [ ] No notifications, secrets, usernames, or unrelated tabs visible
+- [ ] Timer is visible to a teammate, not the audience
