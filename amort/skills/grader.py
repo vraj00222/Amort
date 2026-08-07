@@ -18,19 +18,23 @@ Three verdicts, and the distinction matters:
   `n/a` instead of `✓` is the difference between "we verified equivalence" and
   "we did not run the thing that could have broken it".
 
-**TODO(layer2):** the semantic tier. Field-exact comparison is right for
-structured output; for free-text answers the plan is a second small LLM call that
-judges equivalence, with the field-exact check as the fast path and the judge only
-on mismatch. Also to come: writing `parity_rate` back onto the Skill so promotion
-(`candidate` → `verified` → `trusted`) is driven by measured agreement rather
-than a hand-set threshold.
+`record_parity()` is the promotion ladder: every replay's verdict is written
+back onto the Skill markdown (`runs_observed`, `parity_rate`, `parity_passes`)
+and a fresh append-only SKILLS row is emitted. Two passes promote
+`candidate → verified`; ANY fail quarantines the skill so it is never
+replayed again until a human (or a re-distillation) clears it.
 """
 
 from __future__ import annotations
 
+import datetime as _dt
 import json
+import logging
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Literal
+
+logger = logging.getLogger("amort.skills.grader")
 
 Verdict = Literal["match", "mismatch", "n/a"]
 
@@ -122,4 +126,82 @@ def grade_accuracy(actual: Any, expected: Any) -> ParityResult:
     return result
 
 
-__all__ = ["REPORT_FIELDS", "REPORT_KEY", "ParityResult", "Verdict", "grade", "grade_accuracy"]
+# ─────────────────────────────────────────────────────────────────────────────
+# Promotion ladder — parity verdicts written back onto the Skill
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def update_skill_frontmatter(md_path: str, **updates: Any) -> dict[str, Any]:
+    """Patch keys into a skill markdown's frontmatter, preserving the rest."""
+    from amort.skills.store_everos import _join_markdown, _split_markdown
+
+    path = Path(md_path)
+    front, body = _split_markdown(path.read_text("utf-8"))
+    front.update(updates)
+    path.write_text(_join_markdown(front, body))
+    return front
+
+
+def record_parity(skill_id: str, parity_result: ParityResult) -> None:
+    """Fold one replay's parity verdict into the skill's ladder state.
+
+    `runs_observed += 1`; `parity_rate` recomputed from the pass count; two
+    passes promote `candidate → verified`; ANY fail sets `status: quarantined`.
+    Also emits a fresh append-only SKILLS row. Never raises.
+    """
+    try:
+        from amort.ledger.events import SkillRecord, emit_skill
+        from amort.skills.store_everos import get_store
+
+        skill = get_store().local.load_skill(skill_id)
+        if skill is None or not skill.md_path:
+            logger.warning("record_parity: skill %s not found — verdict dropped", skill_id)
+            return
+        front, _ = _read_front(skill.md_path)
+        runs = int(front.get("runs_observed") or 0) + 1
+        passes = int(front.get("parity_passes") or 0) + (1 if parity_result.ok else 0)
+        status = str(front.get("status") or "candidate")
+        if not parity_result.ok:
+            status = "quarantined"
+        elif status == "candidate" and passes >= 2:
+            status = "verified"
+        update_skill_frontmatter(
+            skill.md_path,
+            runs_observed=runs,
+            parity_passes=passes,
+            parity_rate=round(passes / runs, 4),
+            status=status,
+            updated_at=_dt.datetime.now(_dt.UTC).replace(microsecond=0).isoformat(),
+        )
+        emit_skill(SkillRecord(
+            skill_id=skill_id,
+            task_fingerprint=skill.task_fingerprint,
+            # SKILLS.status literal has no 'quarantined'; a quarantined skill is
+            # ledgered as a demoted candidate — the markdown is authoritative.
+            status="candidate" if status == "quarantined" else status,  # type: ignore[arg-type]
+            runs_observed=runs,
+            parity_rate=round(passes / runs, 4),
+            md_path=skill.md_path,
+        ))
+        logger.info("record_parity: %s %s -> status=%s rate=%.2f (%d/%d)",
+                    skill_id, parity_result.symbol, status, passes / runs, passes, runs)
+    except Exception as exc:  # noqa: BLE001 — grading must never fail a run
+        logger.warning("record_parity failed for %s: %s", skill_id, exc)
+
+
+def _read_front(md_path: str) -> tuple[dict[str, Any], str]:
+    from amort.skills.store_everos import _split_markdown
+
+    return _split_markdown(Path(md_path).read_text("utf-8"))
+
+
+__all__ = [
+    "REPORT_FIELDS",
+    "REPORT_KEY",
+    "ParityResult",
+    "Verdict",
+    "grade",
+    "grade_accuracy",
+    "record_parity",
+    "update_skill_frontmatter",
+]
