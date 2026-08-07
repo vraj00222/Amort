@@ -128,12 +128,23 @@ def _run_lane_amortize(prompt: str, out: dict[str, Any]) -> None:
             "base_url": f"{s.novita_api_url.rstrip('/')}/v1", "api_key": s.novita_api_key,
         })
         if outcome.took_warm_path:
-            tokens = cost = 0.0
+            # Mirror the replay into a real RunRecorder (same as the harness) so
+            # the warm run lands in RUNS/STEPS — without this the dashboard's
+            # amortize/warm curve never gains a point and the avg-cost tile
+            # UNDERcounts the savings by omitting the cheapest runs.
+            from amort.demo.harness import _replay_into_recorder
+            from amort.skills.recorder import RunRecorder
+
+            rec = RunRecorder(
+                lane="amortize", mode="warm", system=task.SYSTEM, user_msg=prompt,
+                tool_names=task.TOOL_NAMES, model=s.novita_model,
+            )
+            _replay_into_recorder(rec, outcome, skill_id=str(match.skill_id), module=task)
+            rec.finish(final_output=outcome.output)
             for step in outcome.steps:
                 _push_step("amortize", {**step, "mode": "warm"})
-                tokens += step.get("input_tokens", 0) + step.get("output_tokens", 0)
-                cost += step.get("cost_usd", 0.0)
-            out.update(report=outcome.output, warm=True, tokens=int(tokens), cost=cost,
+            out.update(report=outcome.output, warm=True, rec=rec,
+                       tokens=rec.input_tokens + rec.output_tokens, cost=rec.cost_usd,
                        wall_ms=outcome.wall_ms, llm_calls=outcome.llm_calls,
                        tool_calls=outcome.tool_calls, skill_id=match.skill_id, mode="warm")
             stage.push({
@@ -219,10 +230,12 @@ def run_prompt(prompt: str) -> None:
 
     if "rec" in a:
         _record(a["rec"].to_case(), "case · direct")
-    if not warm and "rec" in b:
+    if "rec" in b:
         case_b = b["rec"].to_case()
-        _record(case_b, "case · amortize")
-        if parity.ok and "rec" in a:
+        if warm:
+            case_b["skill_id"] = str(b.get("skill_id") or "")
+        _record(case_b, "case · amortize" + (" (warm)" if warm else ""))
+        if not warm and parity.ok and "rec" in a:
             _maybe_compile(a["rec"].to_case(), case_b)
 
 
