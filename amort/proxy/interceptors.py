@@ -67,6 +67,9 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
+from amort.config import get_settings
+from amort.proxy.lighten import build_stub_tool, estimate_tokens, is_synthetic
+
 logger = logging.getLogger("amort.proxy.interceptors")
 
 Provider = Literal["anthropic", "openai"]
@@ -150,16 +153,55 @@ class ProxyResponse:
 
 
 def before_request(req: ProxyRequest) -> ProxyRequest:
-    """Layer 1/2 entry point. Currently a strict pass-through.
+    """Layer 1/2 entry point. Layer 1 dieting is live; Layer 2 lookup is a stub.
 
-    TODO(layer1): tool-schema dieting — replace `req.body["tools"]` with compact
-    stubs + a synthetic `search_tools` tool, and record the mapping so
-    `after_response` can hydrate a stub the model selected.
+    The gate is deliberately narrow (CONTRACTS.md): OpenAI format, non-streaming,
+    more tools than the stub threshold, and `AMORT_LIGHTEN` on. Everything else —
+    streaming, Anthropic, small requests — keeps the byte-identical passthrough
+    that Phase 6 verified, because a rewritten request must never be the reason a
+    real client breaks.
 
     TODO(layer2): skill lookup — fingerprint the task and, on a confident hit,
     mark `req.meta["skill_id"]` so the server can route to the replayer instead
     of upstream.
     """
+    settings = get_settings()
+    if not settings.amort_lighten or req.provider != "openai" or req.stream:
+        return req
+
+    body = req.body
+    if not isinstance(body, dict):
+        return req
+    catalog = body.get("tools")
+    if not isinstance(catalog, list) or len(catalog) <= settings.amort_tool_stub_threshold:
+        return req
+    if any(is_synthetic(t) for t in catalog):
+        return req  # already lightened — this is a discovery iteration, leave it
+
+    stub = build_stub_tool(catalog)
+    before = estimate_tokens(catalog)
+    after = estimate_tokens([stub])
+    if after >= before:
+        # A catalogue of terse tools can cost more as stubs than as schemas.
+        logger.debug("dieting skipped: stubs (%d tok) not smaller than schemas (%d tok)",
+                     after, before)
+        return req
+
+    # A *fresh* dict: `relay()` detects a rewrite by identity (`body is not
+    # parsed`), so mutating in place would silently forward the original bytes.
+    new_body = dict(body)
+    new_body["tools"] = [stub]
+    req.body = new_body
+    req.meta["layer1"] = {
+        "schema_tokens_before": before,
+        "schema_tokens_after": after,
+        "spilled_tokens": 0,
+    }
+    # The full catalogue, kept out of `meta["layer1"]` so what reaches the ledger
+    # stays small; the proxy loop resolves `amort__search_tools` against this.
+    req.meta["layer1_catalog"] = catalog
+    logger.info("layer1: %d tools → stubs, %d → %d tok (-%.0f%%)",
+                len(catalog), before, after, 100 * (1 - after / before))
     return req
 
 
