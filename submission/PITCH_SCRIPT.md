@@ -1,153 +1,154 @@
-# The legendary three-minute pitch
+# Three-minute product-launch pitch
 
-## Title
+This is a launch demo, not a narrated document. Run the complete four-cell race
+immediately before presenting, then reveal its result from the exact same git
+SHA. The stage, report, Snowflake rows, screenshots, and spoken numbers must all
+agree.
 
-**AMORTIZE — Compound intelligence, not token bills.**
+Target delivery: **278 spoken words**, leaving time for three-second
+metric holds and screen transitions. Hard stop at **3:00**.
 
-Target delivery: 2:50–3:00, calm and deliberate. The speaker should not narrate
-terminal mechanics. Let the visual prove the mechanics while the words explain
-why they matter.
+## Truth lock
 
-## Truth lock before speaking
-
-Replace these tokens only from the final verified `demo_report.json` and
-Snowflake rows:
+Replace these tokens only from the final live `demo_report.json`, matching
+ledger rows, and `git rev-parse --short HEAD`:
 
 ```text
+{{DIRECT_COLD_COST_USD}}
+{{AMORTIZE_COLD_COST_USD}}
 {{L1_SCHEMA_REDUCTION_PCT}}
-{{L1_END_TO_END_COST_DELTA_PCT}}
+{{L1_COST_REDUCTION_PCT}}
+{{DIRECT_WARM_COST_USD}}
+{{AMORTIZE_WARM_COST_USD}}
 {{L2_WARM_COST_REDUCTION_PCT}}
 {{COLD_PARITY_FIELDS}}
+{{COLD_ACCURACY_FIELDS}}
 {{WARM_PARITY_FIELDS}}
-{{FINAL_MODEL}}
+{{WARM_ACCURACY_FIELDS}}
+{{RUN_ID}}
+{{MODEL}}
 {{LEDGER_BACKEND}}
+{{FINAL_SHA}}
 ```
 
-Never turn the acceptance targets—60% and 85%—into achieved numbers unless the
-final gates pass.
+Do not replace a token with a target. If LIGHTEN or REPLAY misses its gate, use
+the honest fallback at the end of this file.
 
 ## Script
 
-### 0:00–0:20 — Hook
+### 0:00–0:15 — Start inside the product
 
-**Screen:** Black title slide. One line appears: **AI agents have amnesia. Your
-cloud bill does not.**
+**Screen:** Projector stage shows `30 tickets complete`. The same task appears
+again and the direct cost meter resets.
 
-**Say:**
+> This agent just triaged 30 support tickets. Ask it to repeat tomorrow, and
+> the company pays it to reload every tool and rediscover the same procedure.
+> Agents learn. Their economics don't.
 
-> Every time an AI agent wakes up, it pays to reread the same tool manuals,
-> swallow the same results, and rediscover work it already completed. We pay
-> frontier-model prices for digital amnesia.
+### 0:15–0:31 — Introduce Amortize
 
-Pause for half a beat.
+**Screen:** Product name appears between the agent and model.
 
-> This is Amortize. It makes intelligence compound instead of starting from
-> zero on every request.
+> Amortize is the cost-control plane for enterprise AI agents. We reduce
+> avoidable context on new work, reuse guarded procedures on repeats, and
+> measure cost per successful task.
 
-### 0:20–0:42 — One-switch product reveal
+### 0:31–0:44 — The switch
 
-**Screen:** Slide 2, then terminal with the proxy already healthy. Highlight
-only `base_url=http://127.0.0.1:4000/v1`.
+**Screen:** Before/after configuration diff. Only `base_url` changes.
 
-**Say:**
+> This is the entire integration. Same client. Same model interface. Same eight
+> tools. One base URL now routes the workflow through Amortize.
 
-> Amortize is a transparent local proxy. Change one base URL—no SDK swap, no
-> agent rewrite—and every request gets LIGHTEN, AMORTIZE, and PROVE.
+### 0:44–0:58 — The contract
 
-> LIGHTEN removes context the model does not need. AMORTIZE turns successful
-> repeats into guarded Skills. PROVE writes every token, dollar, and parity
-> grade into Snowflake.
+**Screen:** Four-cell fair-race frame.
 
-### 0:42–1:22 — Demo beat one: LIGHTEN
+> We ran this comparison moments ago: same model, same 30 tickets, same tools,
+> same prompt, and the same 120-field ground-truth grader.
 
-**Screen:** Start or reveal the cold race: direct versus through Amortize.
+### 0:58–1:26 — New-task reveal
 
-**Say:**
+**Screen:** Reveal raw cold dollars first, then reduction, parity, and accuracy.
 
-> The same real task runs on both sides: triage 30 tickets with eight verbose
-> tools and return a 120-field report.
+> On the new task, Direct cost **{{DIRECT_COLD_COST_USD}}**. Amortize cost
+> **{{AMORTIZE_COLD_COST_USD}}**—down **{{L1_COST_REDUCTION_PCT}}**, with
+> **{{L1_SCHEMA_REDUCTION_PCT}}** less tool-schema context. All
+> **{{COLD_PARITY_FIELDS}}** fields matched, and all
+> **{{COLD_ACCURACY_FIELDS}}** matched ground truth.
 
-> The left agent receives every tool schema up front. Amortize gives the right
-> agent a compact map and hydrates only the tools it asks for. Large results stay
-> behind readable handles instead of being repurchased every turn.
+### 1:26–1:54 — Repeat reveal
 
-**Screen:** Freeze on the cold result and parity check.
+**Screen:** Direct pays for another loop; Amortize takes the guarded Skill path.
 
-> In this run, schema context fell by **{{L1_SCHEMA_REDUCTION_PCT}}**, end-to-end
-> cost changed by **{{L1_END_TO_END_COST_DELTA_PCT}}**, and the answer still
-> matched **{{COLD_PARITY_FIELDS}} fields**. The cost drops. The answer doesn't.
+> On the repeat, Direct cost **{{DIRECT_WARM_COST_USD}}**. Amortize reused a
+> verified procedure with guards and fallback: **{{AMORTIZE_WARM_COST_USD}}**,
+> down **{{L2_WARM_COST_REDUCTION_PCT}}**. Again:
+> **{{WARM_PARITY_FIELDS}}** identical and **{{WARM_ACCURACY_FIELDS}}** correct.
 
-### 1:22–1:58 — Demo beat two: AMORTIZE
+### 1:54–2:18 — The Agent Economics Receipt
 
-**Screen:** Trigger the same request again. Optional: use Voice Cursor only if
-the route has been rehearsed—“Amortize, triage those tickets again.”
+**Screen:** Snowflake row for `{{RUN_ID}}`; then the matching signed report.
 
-**Say:**
+> Don't trust the percentage. Query it. Snowflake records the calls, tools,
+> tokens, dollars, and backend behind this run. The signed report records parity
+> and accuracy. Together they turn model spend into cost per successful task.
 
-> Now we ask again. Normal agents pay again. Amortize turns agreeing successful
-> Cases into a verified Skill, binds new parameters, runs the tools as code, and
-> verifies the result. If a guard fails, it falls back to the full agent—never a
-> confidently wrong shortcut.
+### 2:18–2:42 — Enterprise motion
 
-**Screen:** Warm result and parity stamp.
+**Screen:** `one workflow → one platform team → enterprise agent fleet`.
 
-> The repeated run was **{{L2_WARM_COST_REDUCTION_PCT}} cheaper**, with
-> **{{WARM_PARITY_FIELDS}}-field parity**.
+> We land with one repetitive workflow and one AI platform engineer. Once the
+> economics are proven, the paid control plane expands into shared Skills,
+> policy, budgets, chargeback, and fleet analytics.
 
-### 1:58–2:25 — Proof, not theatre
+### 2:42–3:00 — Close
 
-**Screen:** Snowflake-backed dashboard. Click one result to show its run and
-step rows. Keep the backend label visible.
+**Screen:** Return to the winning cost number, `120/120 correct`, product name,
+and repository URL.
 
-**Say:**
+> Companies don't buy tokens. They buy completed work. AI agents should have a
+> learning curve—and finance should have the receipt. Amortize. The cost drops.
+> The graded output doesn't.
 
-> Hackathon demos love percentages. Do not trust ours—query it. The Snowflake
-> ledger behind this screen records every internal call, token, tool, replay,
-> and parity grade.
+Stop speaking. Leave the repository URL visible.
 
-> Snowflake is our economic control plane: it makes savings auditable and opens
-> the door to budgets, chargeback, routing, and verified Skill markets.
+## Honest fallback if a gate misses
 
-### 2:25–2:46 — Product and market
+### Current LIGHTEN-only launch state
 
-**Screen:** Product ladder: Local proxy → Team control plane → Skill economy.
+If guarded REPLAY has not passed, replace the 0:58–1:54 result section with:
 
-**Say:**
+> LIGHTEN is already through its gate. On the current checkout, the eight-tool
+> schema fell from 1,497 to 518 estimated tokens—**65.4% less context**. In one
+> live A/B pair, input tokens fell from 41,058 to 34,820—**15.2% fewer**—with a
+> field-exact final report.
 
-> The open-source proxy is the wedge. Teams add shared Skills, policy, budgets,
-> and chargeback without changing their agents. The buyer is anyone running
-> repetitive agent workflows in support, coding, operations, or finance.
+> That live result is one pair, not a mean or a dollar-cost claim. Guarded
+> repeat replay is our next gate, and we will not present its 85% target as a
+> result. What is live today is the proxy, LIGHTEN, the fair-race harness, the
+> stage, and the economics receipt.
 
-### 2:46–3:00 — Close
+Then continue at **1:54** with the Agent Economics Receipt. This remains under
+three minutes.
 
-**Screen:** Final result card: savings, parity, Snowflake receipt. Then the logo
-and repository QR code.
+### Generic miss
 
-**Say:**
+Use this result state instead of a savings headline:
 
-> Models will get smarter. Agents will use more tools. Context will get bigger.
-> The winning infrastructure will make all of that intelligence reusable.
+> Our final run measured **{{ACTUAL_PCT}}** against a **{{TARGET_PCT}}**
+> acceptance gate. All **{{ACTUAL_CORRECT_FIELDS}}** graded fields were correct.
+> We are showing what happened, not what we hoped. The control plane and receipt
+> are live; the optimizer remains in validation.
 
-> Amortize: **compound intelligence, not token bills.**
+## Delivery rules
 
-Stop. Do not add “thank you” over the applause beat.
-
-## Honest fallback if an optimization gate is not green
-
-If either layer misses its threshold, do not fake the headline. Say:
-
-> Our final run measured **{{ACTUAL_PCT}}** with exact parity. The gate was
-> **{{TARGET_PCT}}**, so we are showing the result as measured, not as hoped.
-> The architecture and ledger make that miss visible—and make the next iteration
-> falsifiable.
-
-Then emphasize the passing layer and Snowflake proof. Credibility is the brand.
-
-## Delivery notes
-
-- Speak at roughly 135 words per minute.
-- Pause after the hook, after each percentage, and after “the answer doesn't.”
-- Never say “basically free,” “zero cost,” or “100% accurate.”
-- Do not read commands aloud.
-- If the live run takes longer than rehearsed, continue the product explanation
-  and cut to the pre-recorded result at the 12-second mark.
+- Do not expose `/health` while it advertises stub layers. After the optimizer
+  merge updates that response, an optional two-second HEAD check may replace
+  part of the config beat.
+- Reveal raw dollars before percentages; pause three seconds after the repeat
+  result.
+- Never say the two-minute race is running live on stage. Say “moments ago from
+  this exact commit.”
+- Never say “zero hallucinations,” “guaranteed savings,” or “enterprise-ready.”
+- At 1:54 open Snowflake. At 2:18 stop technical detail. At 2:42 close.

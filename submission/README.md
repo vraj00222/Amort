@@ -1,156 +1,273 @@
-# AMORTIZE — The cost drops. The answer doesn't.
+# Introducing Amortize
 
-> **AI agents have amnesia. Your cloud bill does not.**
->
-> Amortize is a transparent local proxy that makes agent runs cheaper, turns
-> repeated work into reusable skills, and proves every saving in Snowflake.
+## The cost-control plane for enterprise AI agents
 
-**Snowflake × Beta Fund · Agent & Token Economy Hackathon**
+> **Repeated agent work should get cheaper with experience.**
 
-Primary track: **Cost of Intelligence** · Secondary: **Wildcard / agent economics**
+**Route once. LIGHTEN new work. REPLAY verified repeats. PROVE every claim.**
 
-## Judge this project in 30 seconds
+[Watch the 75-second cut](VIDEO_PLAN.md) · [Run the fair race](DEMO_RUNBOOK.md) ·
+[Deliver the three-minute pitch](PITCH_SCRIPT.md) ·
+[Open the launch deck](AMORTIZE_LAUNCH_DECK.pptx)
 
-| The problem | The product | The proof |
-|---|---|---|
-| Agents repeatedly resend large tool schemas and rediscover procedures they already completed. | Point an existing OpenAI- or Anthropic-compatible client at one local proxy. No SDK swap and no application rewrite. | Every LLM, tool, replay, and parity step lands in a Snowflake-compatible ledger. The demo computes savings from those rows. |
+**Technical preview · Snowflake × Beta Fund Agent & Token Economy Hackathon**
 
-The product has three verbs:
+Primary track: **Cost of Intelligence** · Secondary: **Wildcard**
 
-1. **LIGHTEN** new runs by revealing full tool schemas only when the model asks
-   for them and spilling oversized tool results behind readable handles.
-2. **AMORTIZE** repeat runs by compiling successful Cases into guarded Skills
-   and replaying the procedure with at most two small LLM calls.
-3. **PROVE** the result with token, cost, latency, parity, and accuracy evidence
-   in Snowflake, with SQLite as a resilient local fallback.
-
-The promise is deliberately simple:
-
-> **The cost drops. The answer doesn't.**
-
-## The three-minute experience
+![Amortize launch deck preview](AMORTIZE_LAUNCH_DECK-preview.webp)
 
 ```text
-00:00  Problem       “AI agents have amnesia. Your cloud bill does not.”
-00:25  One switch    Existing agent → Amortize with one base URL
-00:45  LIGHTEN       Cold run: fewer schema tokens, same 120 fields
-01:25  AMORTIZE      Repeat run: guarded Skill replay, parity ✓
-02:00  PROVE         Open Snowflake-backed evidence, not a marketing estimate
-02:25  Universality  Reuse the proxy with another agent; optional voice trigger
-02:45  Close         “Compound intelligence—not token bills.”
+65.4% LESS TOOL-SCHEMA CONTEXT  ·  15.2% FEWER LIVE INPUT TOKENS  ·  PARITY PASS
 ```
 
-Full materials:
+The current checkout's unit gate measures 1,497 → 518 estimated schema tokens
+(−65.4%). The live A/B pair in `BUILD_REPORT.md` at `09e4396` measures 41,058 →
+34,820 input tokens (−15.2%) with field-exact parity. The live result is a
+single pair—not a mean and not yet an end-to-end dollar-savings claim.
 
-- [Legendary three-minute pitch](PITCH_SCRIPT.md)
-- [Eight-slide narrative and visual direction](SLIDES.md)
-- [Live-demo runbook and failure ladder](DEMO_RUNBOOK.md)
-- [Video shot list](VIDEO_PLAN.md)
-- [Verified metrics and truth-lock process](METRICS.md)
-- [Judge Q&A](JUDGE_QA.md)
+Companies are deploying fleets of AI agents, but their unit economics reset on
+every run. The same tool manuals return to context. The same solved procedure
+is reasoned through again. And the provider bill cannot tell finance whether a
+cheaper run still completed the job.
 
-## Architecture
+Amortize sits between a supported agent client and its model. One endpoint
+change creates a place to reduce avoidable context, reuse guarded procedures,
+and measure cost per successful task.
 
-```mermaid
-flowchart LR
-    A["Any agent or SDK"] -->|"one base URL"| P["Amortize proxy"]
-    P --> L["LIGHTEN\nselective tool context"]
-    L --> R["AMORTIZE\nguarded Skill replay"]
-    R --> N["Novita / model upstream"]
-    P --> E["EverOS\nCases + Skills"]
-    L --> S["Snowflake ledger"]
-    R --> S
-    N --> S
-    S --> D["PROVE dashboard\ncost + parity + accuracy"]
+```text
+One endpoint. Same graded output. Measured economics.
 ```
 
-Amortize sits in the request path, but optimization is never allowed to break
-the request. A failed optimization falls back to the original full agent run.
+## What launches today
 
-## One switch, existing clients
+**Product:** a self-hosted, OpenAI- and Anthropic-compatible proxy with a
+four-cell comparison harness, a live projector stage, and an economic ledger.
+
+**User:** the AI platform engineer operating repetitive, tool-heavy workflows.
+
+**Buyer:** the Head of AI, VP Engineering, or FinOps owner accountable for the
+model bill.
+
+**Wedge:** change one base URL. No proprietary agent SDK and no application
+rewrite.
+
+**Expansion:** shared verified Skills, policy, budgets, chargeback, retention,
+and fleet analytics. These are product direction, not shipped claims.
+
+## The launch artifact: the Agent Economics Receipt
+
+Every measured comparison resolves to a receipt: what ran, what the model and
+tools consumed, what it cost, which backend stored the economics, and whether
+the structured output contract passed.
+
+```text
+RUN       direct vs Amortize · cold vs repeat
+ECONOMY   model · tokens · dollars · wall time · internal optimizer usage
+QUALITY   parity · ground-truth accuracy · simulated flag
+PROOF     run IDs · ledger backend · demo report · git SHA
+```
+
+Today, Snowflake records run and step economics. `demo_report.json` records the
+parity and ground-truth verdict for the full race. The final demo shows both
+artifacts together; it does not imply the quality verdict is already persisted
+as a Snowflake grade row.
+
+## Before and after
+
+| Without Amortize | With the Amortize control plane |
+|---|---|
+| Every tool definition rides every relevant turn | LIGHTEN reveals tool schemas on demand and preserves needed history |
+| A repeated workflow starts another full agent loop | REPLAY is designed to execute a verified Skill behind guards |
+| A provider invoice ends the conversation | The receipt connects cost to task, run, step, and graded outcome |
+| A cheaper wrong answer can look like a win | The saving is rejected when parity or accuracy fails |
+
+## One switch
+
+Start the proxy:
 
 ```bash
-uv sync
 uv run amort up
 ```
 
-OpenAI-compatible clients:
+Point a supported client at it:
+
+```bash
+# Anthropic-compatible clients, including the tested Claude Code gateway path
+export ANTHROPIC_BASE_URL=http://127.0.0.1:4000
+
+# OpenAI-compatible clients
+base_url=http://127.0.0.1:4000/v1
+```
+
+That config diff is the first product reveal in the pitch: same client, same
+model interface, one new control point.
+
+## One product, three layers
+
+| Layer | Product contract | Current branch truth |
+|---|---|---|
+| **LIGHTEN** | Discover tools on demand and spill oversized results behind readable handles | **Merged; acceptance green.** 65.4% less schema context in the current unit gate and 15.2% fewer live input tokens in the recorded pair, with field-exact parity |
+| **REPLAY** | Compile agreeing successful Cases into guarded, versioned Skills | Recorder/store exist; compiler and replayer remain stubs until their gate passes |
+| **PROVE** | Measure model calls, tools, tokens, cost, latency, backend, and race outcomes | Proxy ledger, four-cell harness, signed report, dashboard, and stage are implemented |
+
+The rule is simple:
+
+> **The cost drops. The graded output doesn't.**
+
+## The signature demo: a fair race
 
 ```text
-base_url = http://127.0.0.1:4000/v1
+                         DIRECT                  AMORTIZE
+NEW TASK                 full agent              LIGHTEN path
+REPEATED TASK            full agent again        guarded Skill path
+
+Held constant: model · 30 tickets · 8 tools · task prompt · 120-field grader
 ```
 
-Anthropic-compatible clients and Claude Code:
+Run the full race immediately before presenting; it takes roughly two minutes
+and does not fit inside the three-minute talk.
 
 ```bash
-export ANTHROPIC_BASE_URL=http://127.0.0.1:4000
-```
+# Terminal A — leave running
+uv run amort up
 
-Demo and proof:
+# Terminal B — truth-locked comparison plus projector stage
+uv run amort demo --task ticket_triage --live --stage
 
-```bash
-uv run amort demo --task ticket_triage --live
+# Optional evidence surfaces
 uv run amort stats
 uv run amort dash --port 8501
 ```
 
-## What the demo actually proves
+The stage is real and available at `http://127.0.0.1:4700`. A recorded report
+can drive the same stage without the network:
 
-The committed fixture asks an agent to triage 30 support tickets using eight
-verbose tools. Each of the four measured cells—direct/proxied × cold/warm—is
-graded against a deterministic 120-field report.
+```bash
+uv run amort demo --replay demo_report.json --stage-port 4700
+```
 
-The latest committed live baseline is intentionally the **pre-optimization
-control**:
+## Acceptance contract
+
+LIGHTEN's technical gate is now green. The remaining launch contract is:
+
+- preserve the verified **65.4% tool-schema reduction** and field-exact parity
+  on the final presentation SHA;
+- **≥85% lower repeat cost** with field-exact parity;
+- **120/120 fields identical and 120/120 correct**;
+- `simulated: false`, final model visible, backend visible;
+- every internal discovery, compilation, binding, and verification model call
+  included in total usage;
+- the exact commit, report, screenshot, video, and spoken numbers agree.
+
+## Current verified LIGHTEN result
+
+Workstream A is merged on main and its acceptance evidence is recorded in
+`BUILD_REPORT.md`:
+
+| Proof | Direct / off | LIGHTEN / on | Measured delta |
+|---|---:|---:|---:|
+| Eight-tool schema estimate, stub text included | 1,497 | 518 | **−65.4%** |
+| Live end-to-end input tokens | 41,058 | 34,820 | **−15.2%** |
+| Final structured report | reference | field-exact equal | **parity pass** |
+
+The live figure is one measured pair on a model with observed trajectory
+variance. It is strong launch evidence, but the final demo should still show
+raw values, the final SHA, and the repeat-cost result separately.
+
+## Current verified control—not a savings claim
+
+The last committed live control (`f4fca99`, 2026-08-07) established a stable
+comparison before the optimizer layers land:
 
 | Cell | Tokens | Cost | Time |
 |---|---:|---:|---:|
 | Direct cold | 47,523 | $0.008 | 34.7 s |
 | Amortize cold | 46,866 | $0.008 | 30.9 s |
-| Direct warm | 48,150 | $0.008 | 35.0 s |
-| Amortize warm | 45,491 | $0.008 | 31.2 s |
+| Direct repeat | 48,150 | $0.008 | 35.0 s |
+| Amortize repeat | 45,491 | $0.008 | 31.2 s |
 
-That run achieved cold parity, warm parity, **120/120 field equality**, and
-ground-truth accuracy across all cells. Its ±few-percent delta is normal model
-noise while LIGHTEN and AMORTIZE are still being merged; it is not presented as
-a saving. See [METRICS.md](METRICS.md) before quoting any final percentage.
+All four cells passed ground-truth accuracy. Cold and repeat outputs each
+matched across 120 graded fields. The small cost differences are ordinary
+run-to-run noise and are deliberately not presented as savings.
 
-Submission gates:
+See [METRICS.md](METRICS.md) before moving any number into a slide, caption, or
+spoken line.
 
-- LIGHTEN: **≥60% tool-schema token reduction** with equal output.
-- AMORTIZE: **≥85% cheaper warm run** with field-exact parity.
-- Every public number must trace to `demo_report.json` and ledger rows.
+## Architecture
 
-## Why this can win
+```mermaid
+flowchart LR
+    A["Supported enterprise agents\nIDE · support · operations"] -->|"one endpoint"| P["Amortize proxy"]
+    P --> L["LIGHTEN\non-demand context"]
+    L --> R["REPLAY\nguarded Skill execution"]
+    R --> M["Compatible model provider"]
+    P <--> E["Cases + Skills\nlocal / EverOS"]
+    P --> S["Snowflake economic ledger"]
+    L --> S
+    R --> S
+    S --> D["Agent Economics Receipt\ncost + report quality verdict"]
+```
 
-### Track 1 · Cost of Intelligence
+Optimization is fail-open: unsupported shapes pass through, and a failed
+optimization must retry the original full path. A cheap wrong answer is a
+failed run, not a saving.
 
-The demo compares the same task, model, tools, output contract, and grader. The
-only variable is whether traffic flows through Amortize. The percentage on the
-screen is calculated—not asserted.
+## Compatibility and boundaries
 
-### Wildcard · Agent and token economics
+| Surface | Demonstrated contract | Optimization status |
+|---|---|---|
+| Anthropic Messages | streaming and non-streaming proxy; Claude Code gateway path tested | pass-through today; optimization gate pending |
+| OpenAI Chat Completions | proxy plus live Novita demo harness | pass-through today; optimization gate pending |
+| Stage view | browser at `http://127.0.0.1:4700`, SSE events, report replay | shipped |
+| Dashboard | Streamlit at `http://127.0.0.1:8501` | shipped |
+| Ledger | Snowflake with SQLite failover | shipped for run/step economics |
 
-Snowflake turns opaque model traffic into an auditable economic layer: cost per
-agent, task, step, tool, replay, team, and model. That creates a path to budgets,
-chargeback, routing, and reusable Skill marketplaces.
+The initial safe-reuse wedge is deterministic, structured, read-heavy work:
+support triage, incident classification, reconciliation, compliance
+checklists, and recurring research. Side-effecting or money-moving workflows
+require idempotency, approvals, and action policy before replay.
 
-### Product path
+This hackathon build is a localhost/self-hosted technical preview. Cases may
+contain prompts, tool arguments/results, and final outputs in local Markdown or
+EverOS. Production direction includes redaction, retention policy, encryption,
+tenant isolation, SSO/RBAC, VPC deployment, and approval controls.
 
-The local proxy is the open-source wedge. A hosted team product can add policy,
-shared verified Skills, spend budgets, chargeback, and fleet analytics. A
-possible—not yet launched—pricing hypothesis is a free local tier plus a
-per-seat team control plane, comfortably above the track's $10 ARR/user bar.
+## Enterprise land and expand
 
-## The wow moments
+**Land:** route one repetitive, measurable workflow through Amortize.
 
-1. **One-line adoption:** change a base URL, not the agent.
-2. **A fair race:** direct versus Amortize, cold versus repeated.
-3. **The parity stamp:** savings do not count unless the 120 fields match.
-4. **The Snowflake receipt:** judges can inspect the rows behind the percentage.
-5. **The second-client beat:** route Claude Code, Cursor, or another compatible
-   agent through the same proxy. Voice can trigger the task, but the ledger is
-   the proof.
+**Prove:** run direct and optimized paths under the same model, tools, task, and
+grader. Count every internal call and calculate cost per successful task.
+
+**Expand:** once economics are visible in Snowflake, apply shared Skills,
+budgets, policy, and chargeback across the agent fleet.
+
+```text
+one workflow  →  one platform team  →  enterprise agent fleet
+```
+
+Design-partner call to action:
+
+> Run more than 100,000 tool-using agent tasks a month? Bring us one repeated
+> workflow. We will return a measured cost-per-success report and its evidence.
+
+## Why this can win the hackathon
+
+- It attacks the track's exact unit of value: the cost of a successful agent
+  task, not just token price.
+- LIGHTEN already clears its schema-context gate at 65.4%, with a live pair
+  showing 15.2% fewer input tokens and field-exact parity.
+- It demonstrates a percentage only after a controlled direct-versus-Amortize
+  race and a structured quality contract.
+- Snowflake is part of the product: it connects engineering telemetry to
+  finance, governance, budgets, and future chargeback.
+- The open-source proxy gives the product a low-friction enterprise wedge.
+- The long-term asset is customer-specific knowledge of which guarded
+  procedure works, what it saves, and when it must fall back.
+
+The concept is win-worthy. The remaining technical requirement is guarded
+REPLAY: it must pass the repeat-cost and quality gate, after which the launch
+assets must be refreshed from that exact evidence run.
 
 ## Demo routes
 
@@ -161,42 +278,49 @@ per-seat team control plane, comfortably above the track's $10 ARR/user bar.
 | Anthropic messages | `POST /v1/messages` |
 | Health | `GET /health` |
 | Proxy statistics | `GET /stats` |
-| Streamlit dashboard | `http://localhost:8501` |
-| Projector stage | Planned `http://localhost:4700`; use only after merged and verified |
+| Projector stage | `http://127.0.0.1:4700` |
+| Stage event stream | `GET http://127.0.0.1:4700/events` |
+| Dashboard | `http://127.0.0.1:8501` |
 
-## Showcase design pattern
+## Presenter kit
 
-The submission borrows presentation patterns—not code or assets—from three
-high-signal open-source projects:
+- [Launch PowerPoint](AMORTIZE_LAUNCH_DECK.pptx)
+- [Launch deck source and slide-by-slide direction](SLIDES.md)
+- [Three-minute pitch](PITCH_SCRIPT.md)
+- [One-page cue card](THREE_MINUTE_CUE_CARD.md)
+- [Exact demo sequence](DEMO_SCRIPT.md)
+- [Operator runbook](DEMO_RUNBOOK.md)
+- [75-second video storyboard](VIDEO_PLAN.md)
+- [Ready-to-import 75-second caption track](amortize-product-75s-current.srt)
+- [Voice cursor integration plan](VOICE_CURSOR_INTEGRATION.md)
+- [Current repo status and work remaining](REPO_STATUS.md)
+- [Snowflake proof queries](DEMO_QUERIES.sql)
+- [Verified metrics lock](METRICS.md)
+- [Enterprise one-pager](ENTERPRISE_ONE_PAGER.md)
+- [Judge Q&A](JUDGE_QA.md)
+- [Submission form copy](SUBMISSION_COPY.md)
+- [Positioning and competitive frame](POSITIONING.md)
 
-- [Browser Use](https://github.com/browser-use/browser-use): lead with visual,
-  named tasks and an immediate human/agent quickstart.
-- [Langflow](https://github.com/langflow-ai/langflow): communicate the product
-  in one feature block and get to a runnable command quickly.
-- [OpenHands](https://github.com/OpenHands/OpenHands): show a clear product
-  ladder from local developer tool to a team/cloud business.
+## Branch and ownership
 
-Our differentiator is the **proof surface**: the first hero visual should be the
-measured race plus parity, not a generic agent animation.
+- **Submission branch:** `sameer`
+- **Implementation source:** `origin/main` (merged into `sameer` before this
+  launch pass)
+- **Submission owner:** Sameer Nagar / `sameernagar-hub`
+- **Code ownership:** implementation workstreams in [TEAM.md](../TEAM.md)
+- **Rule while main moves:** merge `origin/main`, rerun the gates, then refresh
+  every screenshot, metric, SHA, deck, and spoken line together.
 
-## Submission asset checklist
+## Sources of truth
 
-- [ ] 16:9 title slide and eight-slide deck
-- [ ] 60–90 second captioned product cut
-- [ ] Three-minute offline backup video
-- [ ] Clean live `demo_report.json` from the final commit
-- [ ] Results screenshot with visible parity and backend label
-- [ ] Snowflake query/result screenshot
-- [ ] Architecture graphic exported from the Mermaid diagram
-- [ ] QR code to repository and 60-second video
-- [ ] Final README links—no private or expiring URLs
-- [ ] Credentials, usernames, and tokens cropped from every frame
-
-## Source of truth
-
-- Product and local setup: [`../README.md`](../README.md)
-- Current ownership: [`../TEAM.md`](../TEAM.md)
-- Frozen interfaces: [`../CONTRACTS.md`](../CONTRACTS.md)
-- Measured engineering log: [`../BUILD_REPORT.md`](../BUILD_REPORT.md)
-- Executable claims: `../scripts/accept_layer1.py` and
+- Product/setup: [root README](../README.md)
+- Ownership: [TEAM.md](../TEAM.md)
+- Frozen interfaces: [CONTRACTS.md](../CONTRACTS.md)
+- Measured build log: [BUILD_REPORT.md](../BUILD_REPORT.md)
+- Executable gates: `../scripts/accept_layer1.py` and
   `../scripts/accept_layer2.py`
+
+Positioning inspiration: [TencentDB Agent Memory](https://github.com/TencentCloud/TencentDB-Agent-Memory)
+demonstrates how to package reusable agent experience as an understandable
+enterprise asset. Amortize occupies a different layer: guarded procedural
+reuse tied to measured task economics.
