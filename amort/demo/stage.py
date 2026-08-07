@@ -158,6 +158,19 @@ def synthesize_events(report: dict[str, Any]) -> list[tuple[float, dict[str, Any
             "ok": bool(run.get("ok", True)), "simulated": run_simulated,
             "replayed": True,
         }))
+        # Memory beats mirror what the live harness pushes: every run records a
+        # Case; a warm amortize run means the skill node was recalled.
+        out.append((0.2, {
+            "type": "memory", "op": "add", "node": f"case_{cell}",
+            "label": f"case · {run.get('lane')}/{run.get('mode')}",
+            "backend": "everos", "replayed": True,
+        }))
+        if run.get("mode") == "warm" and run.get("lane") == "amortize" and run.get("skill_id"):
+            out.append((0.3, {
+                "type": "memory", "op": "hit", "node": str(run["skill_id"]),
+                "label": "skill recalled — replaying", "backend": "everos",
+                "replayed": True,
+            }))
 
     parity = report.get("parity") or {}
     for key, entry in parity.items():

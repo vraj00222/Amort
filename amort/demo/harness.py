@@ -143,6 +143,10 @@ def _run_once(
         match = search_skill(fp, fingerprint_query(module.SYSTEM, module.TASK_PROMPT, module.TOOL_NAMES))
         if match and match.is_confident:
             skill_id = match.skill_id
+            stage.push({
+                "type": "memory", "op": "hit", "node": str(skill_id),
+                "label": "skill recalled — replaying", "backend": "everos",
+            })
             outcome = replay(match.skill, {
                 "user_msg": module.TASK_PROMPT,
                 "tool_executor": module.execute_tool,
@@ -187,7 +191,11 @@ def _run_once(
     from amort.skills.store_everos import record_case
 
     try:
-        record_case(case)
+        case_id = record_case(case)
+        stage.push({
+            "type": "memory", "op": "add", "node": str(case_id),
+            "label": f"case · {lane}/{mode}", "backend": "everos",
+        })
     except Exception as exc:  # noqa: BLE001 — memory must not fail the demo
         console.print(f"[yellow]note:[/yellow] could not record case: {exc}")
 
@@ -288,6 +296,10 @@ def _compile_hook(case_a: dict[str, Any], case_b: dict[str, Any],
         result.notes.append(
             f"compiled skill {skill_id} (status={skill.status}) from the two cold runs"
         )
+        stage.push({
+            "type": "memory", "op": "skill", "node": str(skill_id),
+            "label": f"skill distilled · {skill.status}", "backend": "everos",
+        })
 
 
 def run_demo(

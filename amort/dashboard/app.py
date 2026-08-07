@@ -119,6 +119,28 @@ writer = _writer()
 st.title("amortize")
 st.caption("A local proxy that makes AI agents cheaper to run — lighten every run, amortize repeats, prove it.")
 
+
+def _sponsor_line() -> str:
+    """Live, verified sponsor-tech status — probed, never asserted."""
+    ledger = writer.name
+    steps = q("SELECT COUNT(*) FROM STEPS")
+    n_steps = steps[0][0] if steps else 0
+    try:
+        import httpx
+
+        ok = httpx.get(f"{settings.everos_base_url}/health", timeout=1.5).status_code == 200
+        everos = "live" if ok else "local markdown fallback"
+    except Exception:  # noqa: BLE001 — a dead probe is a status, not an error
+        everos = "local markdown fallback"
+    return (
+        f"**Novita** inference · `{settings.novita_model}`  |  "
+        f"**EverOS** memory · {everos}  |  "
+        f"**❄ Snowflake** ledger · `{ledger}` · {n_steps:,} step rows"
+    )
+
+
+st.markdown(_sponsor_line())
+
 # ── header ───────────────────────────────────────────────────────────────────
 totals = q(
     "SELECT COUNT(*), COALESCE(SUM(INPUT_TOKENS + OUTPUT_TOKENS), 0), "

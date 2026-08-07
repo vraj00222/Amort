@@ -210,6 +210,46 @@
   }
   .ticker b { color: var(--dim); font-weight: 700; }
 
+  /* ── sponsor strip + memory graph: real activity only, never decoration ── */
+  #powerbar {
+    display: flex; justify-content: space-between; align-items: center; gap: 2vw;
+    margin-top: 1.4vh; padding: 1vh 1.4vw; border-top: 1px solid var(--line);
+    font-size: 1.7vh;
+  }
+  .plbl { color: var(--label); letter-spacing: .14em; font-size: 1.4vh; text-transform: uppercase; }
+  .sponsors { display: flex; align-items: baseline; gap: 1.6vw; }
+  .sp {
+    font-weight: 800; letter-spacing: .06em; color: var(--dim);
+    padding: .3vh .7vw; border-radius: 6px; border: 1px solid var(--line);
+    transition: box-shadow .25s, color .25s, border-color .25s; white-space: nowrap;
+  }
+  .sp .spsub {
+    display: block; font-weight: 500; font-size: 1.2vh; letter-spacing: .12em;
+    color: var(--label); text-transform: uppercase;
+  }
+  .sp.pulse { color: #fff; }
+  #sp-novita.pulse   { border-color: #23d57c; box-shadow: 0 0 14px rgba(35,213,124,.55); }
+  #sp-everos.pulse   { border-color: #a78bfa; box-shadow: 0 0 14px rgba(167,139,250,.55); }
+  #sp-snowflake.pulse{ border-color: #29b5e8; box-shadow: 0 0 14px rgba(41,181,232,.55); }
+  .membox { display: flex; align-items: center; gap: 1vw; min-width: 0; flex: 1; justify-content: flex-end; }
+  #memgraph { display: flex; align-items: center; gap: .5vw; overflow: hidden; }
+  .mnode {
+    width: 1.5vh; height: 1.5vh; border-radius: 50%;
+    background: rgba(167,139,250,.35); border: 1px solid #a78bfa;
+    transition: transform .3s, box-shadow .3s; flex: 0 0 auto;
+    animation: mgrow .45s ease-out;
+  }
+  .mnode.skill { width: 2.1vh; height: 2.1vh; border-radius: 4px; transform: rotate(45deg);
+                 background: rgba(167,139,250,.55); }
+  .mnode.hit { box-shadow: 0 0 16px rgba(167,139,250,.95); background: #a78bfa;
+               animation: mpulse .9s ease-out; }
+  .mnode.skill.hit { transform: rotate(45deg) scale(1.25); }
+  .memnote { color: var(--label); font-size: 1.5vh; white-space: nowrap; overflow: hidden;
+             text-overflow: ellipsis; max-width: 26vw; }
+  @keyframes mgrow  { from { transform: scale(0); } to { transform: scale(1); } }
+  @keyframes mpulse { 0% { box-shadow: 0 0 0 0 rgba(167,139,250,.9); }
+                      100% { box-shadow: 0 0 0 2.2vh rgba(167,139,250,0); } }
+
   /* ── final overlay ──────────────────────────────────────────────────── */
   #overlay {
     position: fixed; inset: 0; background: var(--bg); display: none;
@@ -313,6 +353,21 @@
       <div class="rail" data-m="rail" aria-hidden="true"></div>
       <div class="ticker" data-m="ticker" aria-live="polite"></div>
     </section>
+  </div>
+
+  <!-- ── sponsor tech + memory graph: lights up only when the tech is USED ── -->
+  <div id="powerbar" aria-label="sponsor technology activity">
+    <div class="sponsors">
+      <span class="plbl">powered by</span>
+      <span class="sp" id="sp-novita" title="every model call runs on Novita">NOVITA<span class="spsub">inference</span></span>
+      <span class="sp" id="sp-everos" title="cases and skills live in EverOS memory">EverOS<span class="spsub">memory</span></span>
+      <span class="sp" id="sp-snowflake" title="every step lands in the Snowflake ledger">❄ SNOWFLAKE<span class="spsub">ledger</span></span>
+    </div>
+    <div class="membox">
+      <span class="plbl" id="memlbl">memory</span>
+      <div id="memgraph" aria-label="EverOS memory graph — nodes appear as runs are recorded, and pulse when recalled"></div>
+      <span class="memnote" id="memnote"></span>
+    </div>
   </div>
 </div>
 
@@ -456,8 +511,48 @@
     });
   }
 
+  // ── sponsor + memory activity (driven only by real events) ─────────────
+  var memNodes = {};
+  function pulse(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove("pulse");
+    void el.offsetWidth;            // restart the transition
+    el.classList.add("pulse");
+    clearTimeout(el._pt);
+    el._pt = setTimeout(function () { el.classList.remove("pulse"); }, 900);
+  }
+  function memoryEvent(ev) {
+    pulse("sp-everos");
+    var g = document.getElementById("memgraph");
+    var node = memNodes[ev.node];
+    if (!node) {                    // upsert: a hit on an unseen node still draws it
+      node = document.createElement("div");
+      node.className = "mnode";
+      node.title = ev.node;
+      memNodes[ev.node] = node;
+      g.appendChild(node);
+    }
+    if (ev.op === "skill" || (ev.op === "hit" && ev.node.indexOf("skl") === 0)) {
+      node.classList.add("skill");
+    }
+    if (ev.op === "hit") {
+      node.classList.remove("hit");
+      void node.offsetWidth;
+      node.classList.add("hit");    // the SAME node lights up when recalled
+    }
+    document.getElementById("memnote").textContent = ev.label || "";
+    document.getElementById("memlbl").textContent =
+      "memory · " + Object.keys(memNodes).length + " node" +
+      (Object.keys(memNodes).length === 1 ? "" : "s");
+  }
+
   function onEvent(ev) {
     var L = ev.lane ? lanes[ev.lane] : null;
+
+    if (ev.type === "memory") { memoryEvent(ev); return; }
+    if (ev.type === "step" && ev.kind === "llm") pulse("sp-novita");
+    if (ev.type === "run_end") pulse("sp-snowflake");
 
     if (ev.type === "run_start" && L) {
       document.getElementById("meta").textContent = (ev.task || "") + " · " + (ev.model || "");
