@@ -500,18 +500,18 @@ class SkillStore:
         return case_id
 
     def distill_skill(self, case_ids: list[str]) -> str | None:
-        """Cluster Cases into a reusable Skill.
+        """Cluster Cases into a reusable Skill — by *id*, which stays unwired.
 
-        TODO(layer2): STUB. The real implementation reads the named Cases, asks
-        an LLM to abstract the shared procedure into Skill Markdown (trigger,
-        parameters, ordered steps, output template, guards), writes it via
-        `write_skill()`, and returns the new skill id with `status: candidate`.
-        Promotion to `verified`/`trusted` is driven by the parity grader, not
-        by this call. EverOS also does this natively (`extract_agent_skill` /
-        `trigger_skill_clustering`) once its LLM providers are configured —
-        preferring its output over ours is the intended end state.
+        The implemented distillation path is `compiler.compile_skill(cases)`,
+        which takes full Case dicts (a markdown Case entry does not retain the
+        machine-readable trajectory this id-based path would need). EverOS also
+        distils natively (`extract_agent_skill`) once its LLM providers are
+        configured — preferring its output over ours is the intended end state.
         """
-        logger.info("distill_skill stub called for %d case(s) — Layer 2 not built", len(case_ids))
+        logger.info(
+            "distill_skill(by-id) is unwired for %d case(s) — use compiler.compile_skill",
+            len(case_ids),
+        )
         return None
 
     def search_skill(self, task_fingerprint: str, query: str) -> SkillMatch | None:
@@ -584,7 +584,7 @@ def record_case(run: dict[str, Any]) -> str:
 
 
 def distill_skill(case_ids: list[str]) -> str | None:
-    """TODO(layer2): distil Cases into a Skill; returns `skill_id` or None."""
+    """Distil Cases into a Skill by id — unwired; use `compiler.compile_skill`."""
     return get_store().distill_skill(case_ids)
 
 
