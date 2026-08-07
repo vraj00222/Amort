@@ -88,6 +88,8 @@ def _try_warm(prompt: str, out: dict[str, Any]) -> bool:
     from amort.skills.store_everos import fingerprint, fingerprint_query, search_skill
 
     s = get_settings()
+    stage.push({"type": "memory", "op": "lookup", "node": "",
+                "label": "searching EverOS memory for this task…", "backend": "everos"})
     fp = fingerprint(task.SYSTEM, prompt, task.TOOL_NAMES)
     match = search_skill(fp, fingerprint_query(task.SYSTEM, prompt, task.TOOL_NAMES))
     if not match or not match.is_confident or match.skill.status != "verified":

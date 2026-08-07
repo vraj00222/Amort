@@ -83,8 +83,12 @@
                text-transform:uppercase; }
   .sp.pulse { color:#fff; }
   #sp-novita.pulse { border-color:var(--accent); box-shadow:0 0 14px rgba(35,213,124,.55); }
-  #sp-everos.pulse { border-color:var(--purple); box-shadow:0 0 14px rgba(167,139,250,.55); }
+  #sp-everos.pulse { border-color:var(--purple); animation:evblink 1.4s ease-in-out; }
   #sp-snowflake.pulse { border-color:var(--snow); box-shadow:0 0 14px rgba(41,181,232,.55); }
+  @keyframes evblink {
+    0%, 28%, 56% { box-shadow:0 0 18px rgba(167,139,250,.9); background:rgba(167,139,250,.18); }
+    14%, 42%, 70%, 100% { box-shadow:0 0 4px rgba(167,139,250,.25); background:transparent; }
+  }
   .membox { display:flex; align-items:center; gap:1vw; min-width:0; flex:1; justify-content:flex-end; }
   #memgraph { display:flex; align-items:center; gap:.5vw; overflow:hidden; }
   .mnode { width:1.5vh; height:1.5vh; border-radius:50%; background:rgba(167,139,250,.35);
@@ -204,6 +208,10 @@
   var memNodes = {};
   function memoryEvent(ev) {
     pulse("sp-everos"); featOn("f-amortize", ev.label || "memory activity");
+    if (ev.op === "lookup") {   // a real query, but not a node in the graph
+      document.getElementById("memnote").textContent = ev.label || "";
+      return;
+    }
     var g = document.getElementById("memgraph");
     var node = memNodes[ev.node];
     if (!node) {
