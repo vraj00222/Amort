@@ -39,6 +39,13 @@
   .ticker { color:var(--label); font-size:1.6vh; min-height:2.2vh; white-space:nowrap; overflow:hidden;
             text-overflow:ellipsis; }
   .ticker b { color:var(--dim); }
+  .outbox { margin-top:.4vh; }
+  .outbox summary { color:var(--label); font-size:1.5vh; cursor:pointer; letter-spacing:.06em;
+                    text-transform:uppercase; }
+  .outbox[open] summary, .outbox summary:hover { color:var(--dim); }
+  .outbox pre { margin-top:.6vh; max-height:22vh; overflow:auto; background:var(--bg);
+                border:1px solid var(--line); border-radius:8px; padding:1vh .8vw;
+                font-size:1.4vh; line-height:1.5; color:var(--dim); white-space:pre; }
   .modebadge { align-self:flex-start; font-size:1.4vh; letter-spacing:.12em; color:var(--label);
                border:1px solid var(--line); border-radius:6px; padding:.3vh .6vw; }
   .lane.warm .modebadge { color:var(--purple); border-color:var(--purple); }
@@ -110,6 +117,8 @@
     <div class="meters"><span class="big" data-m="tok">0</span><span class="unit">tokens</span>
       <span class="usd" data-m="usd">$0.0000</span><span class="clock" data-m="clock"></span></div>
     <div class="ticker" data-m="ticker">idle</div>
+    <details class="outbox" data-m="outbox"><summary>output · <span data-m="outmeta">none yet</span></summary>
+      <pre data-m="out"></pre></details>
   </div>
   <div class="lane" id="lane-amortize">
     <span class="modebadge" data-m="mode">THROUGH AMORTIZE</span>
@@ -117,6 +126,8 @@
     <div class="meters"><span class="big" data-m="tok">0</span><span class="unit">tokens</span>
       <span class="usd" data-m="usd">$0.0000</span><span class="clock" data-m="clock"></span></div>
     <div class="ticker" data-m="ticker">idle</div>
+    <details class="outbox" data-m="outbox"><summary>output · <span data-m="outmeta">none yet</span></summary>
+      <pre data-m="out"></pre></details>
   </div>
 </div>
 
@@ -155,7 +166,8 @@
     var el = document.getElementById("lane-" + name);
     function m(k) { return el.querySelector('[data-m="' + k + '"]'); }
     lanes[name] = { el: el, tok: m("tok"), usd: m("usd"), clock: m("clock"),
-                    ticker: m("ticker"), mode: m("mode"), t0: 0, totTok: 0, totUsd: 0,
+                    ticker: m("ticker"), mode: m("mode"), out: m("out"), outmeta: m("outmeta"),
+                    outbox: m("outbox"), t0: 0, totTok: 0, totUsd: 0,
                     showTok: 0, showUsd: 0, _raf: null, timer: null };
   });
   function fmt(n) { return Math.round(n || 0).toLocaleString("en-US"); }
@@ -222,6 +234,7 @@
         var x = lanes[n]; x.totTok = 0; x.totUsd = 0; x.showTok = 0; x.showUsd = 0;
         x.tok.textContent = "0"; x.usd.textContent = "$0.0000";
         x.ticker.textContent = "waiting…"; x.clock.textContent = "";
+        x.out.textContent = ""; x.outmeta.textContent = "none yet"; x.outbox.removeAttribute("open");
         x.el.classList.remove("running", "warm");
       });
     } else if (ev.type === "run_start" && L) {
@@ -257,6 +270,12 @@
       L.ticker.innerHTML = ev.ok === false
         ? "<b style='color:var(--bad)'>failed</b> " + (ev.error || "")
         : "<b>complete</b> · " + (ev.llm_calls || 0) + " model / " + (ev.tool_calls || 0) + " tool calls";
+    } else if (ev.type === "output" && L) {
+      L.out.textContent = JSON.stringify(ev.report, null, 2);
+      var rows = (ev.report && ev.report.report && ev.report.report.length) || 0;
+      L.outmeta.textContent = rows
+        ? rows + " tickets · " + L.out.textContent.length.toLocaleString("en-US") + " chars"
+        : "ready";
     } else if (ev.type === "parity") {
       featOn("f-prove", ev.verdict === "match"
         ? "grader: " + (ev.compared || "") + " fields compared — identical"

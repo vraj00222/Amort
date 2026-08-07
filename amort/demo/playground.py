@@ -197,6 +197,10 @@ def run_prompt(prompt: str) -> None:
             "error": side.get("error"),
         })
 
+    for lane, side in (("baseline", a), ("amortize", b)):
+        if isinstance(side.get("report"), dict):
+            stage.push({"type": "output", "lane": lane, "report": side["report"]})
+
     parity = grade(a.get("report"), b.get("report"))
     stage.push({"type": "parity", "key": "left_vs_right", "verdict": parity.verdict,
                 "symbol": parity.symbol, "compared": parity.compared})
